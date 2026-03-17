@@ -247,61 +247,32 @@ st.markdown("---")
 st.markdown("© 2024 tuamigocontable.com - Todos los derechos reservados")
 
 # ============================================
-# CONFIGURACIÓN DE ESTILOS - FONDO OSCURO + BOTÓN FLOTANTE
+# CONFIGURACIÓN DE ESTILOS Y CHAT FLOTANTE
 # ============================================
 st.markdown("""
 <style>
-    /* Fondo oscuro degradado - SIN BLANCO */
+    /* Fondo blanco elegante */
     .stApp {
-        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
-        color: white;
+        background: linear-gradient(135deg, #ffffff 0%, #f5f5f7 100%);
     }
     
-    /* Eliminar cualquier fondo blanco residual */
-    .stApp > header {
-        background: transparent !important;
-    }
-    .stApp > div {
-        background: transparent !important;
-    }
-    .main > div {
-        background: transparent !important;
-    }
-    
-    /* Tarjetas de métricas con neón */
+    /* Tarjetas de métricas */
     .metric-card {
-        background: rgba(10, 10, 10, 0.8);
-        backdrop-filter: blur(10px);
+        background: white;
         padding: 25px;
         border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         border: 2px solid;
         transition: all 0.3s ease;
         text-align: center;
         margin: 10px 0;
     }
-    .metric-card.verde {
-        border-color: #00ff00;
-        box-shadow: 0 0 30px rgba(0, 255, 0, 0.3);
-    }
-    .metric-card.rojo {
-        border-color: #ff0000;
-        box-shadow: 0 0 30px rgba(255, 0, 0, 0.3);
-    }
-    .metric-card.azul {
-        border-color: #0000ff;
-        box-shadow: 0 0 30px rgba(0, 0, 255, 0.3);
-    }
-    .metric-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 0 50px currentColor;
-    }
-    .metric-value {
-        font-size: 36px;
-        font-weight: bold;
-        text-shadow: 0 0 20px currentColor;
-    }
+    .metric-card.verde { border-color: #00ff00; }
+    .metric-card.rojo { border-color: #ff0000; }
+    .metric-card.azul { border-color: #0000ff; }
+    .metric-value { font-size: 36px; font-weight: bold; }
     
-    /* BOTÓN FLOTANTE DE IA - ESTILO WHATSAPP */
+    /* BOTÓN FLOTANTE DE IA - SIEMPRE VISIBLE */
     .ia-float-button {
         position: fixed;
         bottom: 30px;
@@ -311,7 +282,7 @@ st.markdown("""
         background: linear-gradient(135deg, #00ff00, #0000ff);
         border-radius: 50%;
         border: 3px solid #ffff00;
-        box-shadow: 0 0 30px rgba(0, 255, 0, 0.5);
+        box-shadow: 0 10px 30px rgba(0, 255, 0, 0.3);
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -319,17 +290,17 @@ st.markdown("""
         font-size: 35px;
         transition: all 0.3s ease;
         z-index: 9999;
+        color: white;
         animation: pulse 2s infinite;
-    }
-    .ia-float-button:hover {
-        transform: scale(1.1) rotate(10deg);
-        box-shadow: 0 0 50px rgba(0, 255, 0, 0.8);
-        border-color: #ff0000;
     }
     @keyframes pulse {
         0% { transform: scale(1); }
         50% { transform: scale(1.05); }
         100% { transform: scale(1); }
+    }
+    .ia-float-button:hover {
+        transform: scale(1.1);
+        box-shadow: 0 20px 40px rgba(0, 255, 0, 0.5);
     }
     
     /* VENTANA FLOTANTE DE IA */
@@ -339,28 +310,16 @@ st.markdown("""
         right: 30px;
         width: 350px;
         height: 500px;
-        background: rgba(10, 10, 10, 0.95);
-        backdrop-filter: blur(20px);
+        background: white;
         border: 3px solid #00ff00;
         border-radius: 20px;
-        box-shadow: 0 0 50px rgba(0, 255, 0, 0.3);
+        box-shadow: 0 20px 40px rgba(0, 255, 0, 0.2);
         display: none;
         z-index: 9998;
         overflow: hidden;
     }
     .ia-window.show {
-        display: block;
-        animation: slideIn 0.3s ease;
-    }
-    @keyframes slideIn {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        display: block !important;
     }
     .ia-header {
         background: linear-gradient(135deg, #00ff00, #0000ff);
@@ -391,7 +350,7 @@ st.markdown("""
         overflow-y: auto;
     }
     
-    /* Botones de acción con gradiente */
+    /* Botones de acción */
     .action-button {
         background: linear-gradient(135deg, #ff0000, #0000ff, #00ff00, #ffff00);
         background-size: 300% 300%;
@@ -401,12 +360,7 @@ st.markdown("""
         border: none;
         border-radius: 15px;
         font-weight: bold;
-        font-size: 16px;
         cursor: pointer;
-        transition: all 0.3s ease;
-        text-align: center;
-        margin: 5px;
-        box-shadow: 0 0 20px rgba(255,255,255,0.3);
         width: 100%;
     }
     @keyframes gradient {
@@ -414,217 +368,79 @@ st.markdown("""
         50% { background-position: 100% 50%; }
         100% { background-position: 0% 50%; }
     }
-    .action-button:hover {
-        transform: scale(1.05);
-        box-shadow: 0 0 30px rgba(255,255,255,0.5);
-    }
-    
-    /* Tabla de movimientos */
-    .dataframe {
-        background: rgba(0,0,0,0.5);
-        border-radius: 15px;
-        overflow: hidden;
-        border: 2px solid #00ff00;
-    }
-    .dataframe th {
-        background: linear-gradient(135deg, #000000, #1a1a1a);
-        color: #00ff00;
-        font-weight: bold;
-        padding: 15px !important;
-        border-bottom: 2px solid #00ff00;
-    }
-    .dataframe td {
-        padding: 12px !important;
-        border-bottom: 1px solid #333;
-        color: white;
-        background: rgba(0,0,0,0.3);
-    }
     
     /* Footer */
     .footer {
         text-align: center;
         padding: 30px;
         margin-top: 50px;
-        color: rgba(255,255,255,0.7);
+        color: #666;
         border-top: 2px solid #00ff00;
-        background: rgba(0,0,0,0.5);
+        background: white;
         border-radius: 15px;
     }
 </style>
 
-<!-- HTML para el botón flotante y ventana IA -->
+<!-- BOTÓN FLOTANTE -->
 <div id="ia-button" class="ia-float-button" onclick="toggleIA()">
     🤖
 </div>
 
+<!-- VENTANA DE CHAT -->
 <div id="ia-window" class="ia-window">
     <div class="ia-header">
         <span>🤖 ASISTENTE IA</span>
         <span class="ia-close" onclick="toggleIA()">✖</span>
     </div>
-    <div class="ia-content" id="ia-content">
-        <div style="color: #00ff00; margin-bottom: 20px; text-align: center;">
-            ⚡ CONECTADO ⚡
-        </div>
-        <div id="chat-messages" style="height: 300px; overflow-y: auto; margin-bottom: 20px;">
+    <div class="ia-content">
+        <div id="chat-messages" style="height: 300px; overflow-y: auto; margin-bottom: 20px; padding: 10px; background: #f5f5f5; border-radius: 10px;">
             <div style="color: #00ff00; margin-bottom: 10px;">
                 🤖 IA: Hola, soy tu asistente contable. ¿En qué puedo ayudarte?
             </div>
         </div>
         <div style="display: flex; gap: 10px;">
             <input type="text" id="user-input" placeholder="Escribe tu consulta..." 
-                   style="flex: 1; padding: 10px; border: 2px solid #00ff00; background: black; color: white; border-radius: 10px;">
-            <button onclick="sendMessage()" style="background: #00ff00; color: black; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer;">➤</button>
+                   style="flex: 1; padding: 12px; border: 2px solid #00ff00; background: white; border-radius: 10px;">
+            <button onclick="sendMessage()" style="background: #00ff00; color: white; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer;">➤</button>
         </div>
     </div>
 </div>
 
 <script>
+// Función para abrir/cerrar el chat
 function toggleIA() {
-    var window = document.getElementById('ia-window');
-    window.classList.toggle('show');
+    var chatWindow = document.getElementById('ia-window');
+    if (chatWindow.classList.contains('show')) {
+        chatWindow.classList.remove('show');
+    } else {
+        chatWindow.classList.add('show');
+    }
 }
 
+// Función para enviar mensajes
 function sendMessage() {
     var input = document.getElementById('user-input');
-    var message = input.value;
-    if (!message) return;
+    var message = input.value.trim();
+    if (message === '') return;
     
     var chat = document.getElementById('chat-messages');
     
-    // Mensaje del usuario
-    chat.innerHTML += '<div style="color: #ffff00; text-align: right; margin: 10px 0;">👤 Tú: ' + message + '</div>';
+    // Agregar mensaje del usuario
+    chat.innerHTML += '<div style="color: #0000ff; text-align: right; margin: 10px 0;">👤 Tú: ' + message + '</div>';
     
-    // Simular respuesta (luego conectaremos con la IA real)
+    // Simular respuesta
     setTimeout(function() {
-        chat.innerHTML += '<div style="color: #00ff00; margin: 10px 0;">🤖 IA: Procesando consulta: "' + message + '". (IA en desarrollo)</div>';
+        chat.innerHTML += '<div style="color: #00ff00; margin: 10px 0;">🤖 IA: Procesando consulta: "' + message + '".</div>';
         chat.scrollTop = chat.scrollHeight;
     }, 1000);
     
     input.value = '';
     chat.scrollTop = chat.scrollHeight;
 }
+
+// Abrir chat con el botón del menú
+function openIAFromMenu() {
+    document.getElementById('ia-window').classList.add('show');
+}
 </script>
-""", unsafe_allow_html=True)
-
-# ============================================
-# ENCABEZADO
-# ============================================
-st.markdown("""
-<div style="text-align: center; padding: 30px 0;">
-    <h1 style="font-size: 48px; background: linear-gradient(135deg, #ff0000, #0000ff, #00ff00, #ffff00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: gradient 5s ease infinite; background-size: 300% 300%;">
-        📊 TUAMIGOCONTABLE.COM
-    </h1>
-    <p style="color: #00ff00; font-size: 20px; text-shadow: 0 0 10px #00ff00;">
-        ⚡ Tu asistente contable inteligente ⚡
-    </p>
-</div>
-""", unsafe_allow_html=True)
-
-# ============================================
-# MÉTRICAS
-# ============================================
-ingresos = st.session_state.libro.obtener_ingresos_mes()
-egresos = st.session_state.libro.obtener_egresos_mes()
-balance = ingresos - egresos
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.markdown(f"""
-    <div class="metric-card verde">
-        <div style="font-size: 50px; margin-bottom: 10px;">🟢</div>
-        <div class="metric-title">INGRESOS</div>
-        <div class="metric-value" style="color: #00ff00;">${ingresos:,.0f}</div>
-        <div style="color: #00ff00;">↑ +12%</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with col2:
-    st.markdown(f"""
-    <div class="metric-card rojo">
-        <div style="font-size: 50px; margin-bottom: 10px;">🔴</div>
-        <div class="metric-title">EGRESOS</div>
-        <div class="metric-value" style="color: #ff0000;">${egresos:,.0f}</div>
-        <div style="color: #ff0000;">↓ -5%</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with col3:
-    st.markdown(f"""
-    <div class="metric-card azul">
-        <div style="font-size: 50px; margin-bottom: 10px;">🔵</div>
-        <div class="metric-title">BALANCE</div>
-        <div class="metric-value" style="color: #0000ff;">${balance:,.0f}</div>
-        <div style="color: #0000ff;">⚖️ Positivo</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-# ============================================
-# BOTONES DE ACCIÓN
-# ============================================
-st.markdown("<br>", unsafe_allow_html=True)
-
-col1, col2, col3, col4, col5 = st.columns(5)
-
-with col1:
-    if st.button("📄 FACTURA", use_container_width=True):
-        st.info("Funcionalidad en desarrollo")
-with col2:
-    if st.button("📦 INVENTARIO", use_container_width=True):
-        st.info("Funcionalidad en desarrollo")
-with col3:
-    if st.button("⚖️ BALANCE", use_container_width=True):
-        st.info("Funcionalidad en desarrollo")
-with col4:
-    if st.button("🤖 IA", use_container_width=True):
-        toggle_script = "<script>toggleIA();</script>"
-        st.markdown(toggle_script, unsafe_allow_html=True)
-with col5:
-    if st.button("📥 EXPORTAR", use_container_width=True):
-        json_str = json.dumps(st.session_state.libro.asientos, indent=2, default=str)
-        st.download_button(
-            label="Descargar JSON",
-            data=json_str,
-            file_name=f"asientos_{datetime.now().strftime('%Y%m%d')}.json",
-            mime="application/json"
-        )
-
-# ============================================
-# TABLA DE MOVIMIENTOS
-# ============================================
-st.markdown("<br>", unsafe_allow_html=True)
-st.markdown('<h2 style="color: #00ff00;">📋 ÚLTIMOS MOVIMIENTOS</h2>', unsafe_allow_html=True)
-
-data = []
-for a in st.session_state.libro.asientos[-10:]:
-    for m in a["movimientos"]:
-        icono = "🔴" if m["debito"] > 0 else "🟢"
-        data.append({
-            " ": icono,
-            "Fecha": a["fecha"],
-            "Comprobante": a["comprobante"],
-            "Cuenta": m["nombre"],
-            "Detalle": m["detalle"][:30] if m["detalle"] else "-",
-            "Débito": f"${m['debito']:,.0f}" if m['debito'] > 0 else "-",
-            "Crédito": f"${m['credito']:,.0f}" if m['credito'] > 0 else "-",
-            "Tercero": a["tercero"][:15] if a["tercero"] else "-"
-        })
-
-df = pd.DataFrame(data)
-st.dataframe(df, use_container_width=True, height=400)
-
-# ============================================
-# FOOTER
-# ============================================
-st.markdown("""
-<div class="footer">
-    <p style="font-size: 16px; margin-bottom: 10px;">
-        <span style="color: #ff0000;">❤️</span> 
-        <span style="color: #0000ff;">💙</span> 
-        <span style="color: #00ff00;">💚</span> 
-        <span style="color: #ffff00;">💛</span>
-    </p>
-    <p>© 2024 tuamigocontable.com - Todos los derechos reservados</p>
-</div>
 """, unsafe_allow_html=True)
