@@ -1,33 +1,431 @@
-{
-  "name": "Python 3",
-  // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-  "image": "mcr.microsoft.com/devcontainers/python:1-3.11-bookworm",
-  "customizations": {
-    "codespaces": {
-      "openFiles": [
-        "README.md",
-        "main.py"
-      ]
-    },
-    "vscode": {
-      "settings": {},
-      "extensions": [
-        "ms-python.python",
-        "ms-python.vscode-pylance"
-      ]
-    }
-  },
-  "updateContentCommand": "[ -f packages.txt ] && sudo apt update && sudo apt upgrade -y && sudo xargs apt install -y <packages.txt; [ -f requirements.txt ] && pip3 install --user -r requirements.txt; pip3 install --user streamlit; echo '✅ Packages installed and Requirements met'",
-  "postAttachCommand": {
-    "server": "streamlit run main.py --server.enableCORS false --server.enableXsrfProtection false"
-  },
-  "portsAttributes": {
-    "8501": {
-      "label": "Application",
-      "onAutoForward": "openPreview"
-    }
-  },
-  "forwardPorts": [
-    8501
-  ]
+# main.py
+"""
+TuAmigoContable - Versión minimalista con asistente IA integrado
+Reemplaza tu main.py por este archivo. Incluye:
+- UI minimalista y accesible
+- Paleta: celeste, azul oscuro, morado, blanco, negro carbón con brillo sutil
+- Conexión con OpenAI (usa OPENAI_API_KEY en st.secrets o en variable de entorno)
+- Manejo de sesiones y descarga JSON
+"""
+
+import streamlit as st
+import pandas as pd
+from datetime import datetime
+import json
+import os
+import traceback
+from dotenv import load_dotenv
+
+# SDK OpenAI (nueva interfaz)
+try:
+    from openai import OpenAI
+except Exception:
+    OpenAI = None
+
+# Cargar .env si existe (útil en local)
+load_dotenv()
+
+# ---------- Configuración de la página ----------
+st.set_page_config(page_title="tuamigocontable", page_icon="📊", layout="wide")
+
+# ---------- Estilos minimalistas ----------
+PALETTE = {
+    "celeste": "#a7e6ff",
+    "azul_oscuro": "#06213a",
+    "morado": "#5b2e8a",
+    "blanco": "#ffffff",
+    "carbon": "#111217"
 }
+
+st.markdown(f"""
+<style>
+:root{{
+  --celeste: {PALETTE['celeste']};
+  --azul-oscuro: {PALETTE['azul_oscuro']};
+  --morado: {PALETTE['morado']};
+  --blanco: {PALETTE['blanco']};
+  --carbon: {PALETTE['carbon']};
+}}
+
+/* Body básico */
+.stApp {{
+  background: linear-gradient(180deg, var(--blanco) 0%, #f7fbff 100%);
+  color: var(--carbon);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}}
+
+/* Header */
+.header {{
+  padding: 20px 10px;
+  border-radius: 12px;
+  margin-bottom: 18px;
+  background: linear-gradient(90deg, rgba(167,230,255,0.06), rgba(91,46,138,0.03));
+}}
+
+h1{{
+  margin: 0;
+  font-size: 30px !important;
+  color: var(--azul-oscuro) !important;
+}}
+
+h2{{
+  color: var(--azul-oscuro) !important;
+}}
+
+/* Tarjetas minimalistas */
+.metric-card {{
+  background: var(--blanco);
+  border-radius: 10px;
+  padding: 14px;
+  box-shadow: 0 6px 18px rgba(17,18,23,0.06);
+  border: 1px solid rgba(6,33,58,0.04);
+}}
+
+.metric-title {{
+  font-size: 12px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}}
+
+.metric-value {{
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--azul-oscuro);
+}}
+
+/* Botones */
+.stButton>button{{
+  background: linear-gradient(90deg,var(--celeste), var(--morado));
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+}}
+
+/* Tabla limpia */
+.stDataFrame table {{
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(6,33,58,0.06);
+}}
+
+/* Footer */
+.footer{{
+  color: #6b7280;
+  padding: 20px 10px;
+  text-align: center;
+}}
+
+/* Pequeño brillo carbón */
+.small-glow {{
+  text-shadow: 0 1px 6px rgba(17,18,23,0.12);
+}}
+
+</style>
+""", unsafe_allow_html=True)
+
+# ---------- Helpers: API Key y cliente OpenAI ----------
+
+def get_api_key():
+    """Busca la API key en st.secrets, variables de entorno o .env"""
+    # st.secrets (Streamlit Cloud)
+    key = None
+    source = None
+    try:
+        if st.secrets.get("OPENAI_API_KEY"):
+            key = st.secrets.get("OPENAI_API_KEY")
+            source = "st.secrets"
+    except Exception:
+        pass
+
+    if not key:
+        key = os.getenv("OPENAI_API_KEY")
+        if key:
+            source = ".env / env var"
+
+    return key, source
+
+api_key, key_source = get_api_key()
+
+# Inicializar cliente si SDK está disponible y hay key
+client = None
+if OpenAI is not None and api_key:
+    try:
+        client = OpenAI(api_key=api_key)
+    except Exception:
+        client = None
+
+# ---------- Sistema contable (versión compacta / estable) ----------
+class Conta:
+    def __init__(self, pais="Colombia", moneda="COP", grupoNIIF=2):
+        self.pais = pais
+        self.moneda = moneda
+        self.grupoNIIF = grupoNIIF
+
+
+class PUCInteligente:
+    def __init__(self):
+        self.cuentas = {}
+        self.inicializarPUC()
+
+    def inicializarPUC(self):
+        self.cuentas = {
+            "110505": {"codigo": "110505", "nombre": "CAJA", "naturaleza": "DEBITO", "aceptaMovimientos": True},
+            "110510": {"codigo": "110510", "nombre": "BANCOS", "naturaleza": "DEBITO", "aceptaMovimientos": True},
+            "1305": {"codigo": "1305", "nombre": "CLIENTES", "naturaleza": "DEBITO", "aceptaMovimientos": True},
+            "1405": {"codigo": "1405", "nombre": "INVENTARIO", "naturaleza": "DEBITO", "aceptaMovimientos": True},
+            "2105": {"codigo": "2105", "nombre": "PROVEEDORES", "naturaleza": "CREDITO", "aceptaMovimientos": True},
+            "2408": {"codigo": "2408", "nombre": "IMPUESTOS POR PAGAR", "naturaleza": "CREDITO", "aceptaMovimientos": True},
+            "4135": {"codigo": "4135", "nombre": "VENTAS", "naturaleza": "CREDITO", "aceptaMovimientos": True},
+            "5105": {"codigo": "5105", "nombre": "GASTOS PERSONAL", "naturaleza": "DEBITO", "aceptaMovimientos": True},
+        }
+
+    def obtenerCuenta(self, codigo):
+        return self.cuentas.get(codigo)
+
+    def validarMovimiento(self, codigoCuenta):
+        cuenta = self.obtenerCuenta(codigoCuenta)
+        if not cuenta:
+            return {"valido": False, "error": "Cuenta no existe"}
+        if not cuenta.get("aceptaMovimientos", False):
+            return {"valido": False, "error": "Cuenta no acepta movimientos directos"}
+        return {"valido": True, "cuenta": cuenta}
+
+
+class LibroDiario:
+    def __init__(self):
+        self.asientos = []
+        self.secuencial = 1
+
+    def registrarAsiento(self, transaccion):
+        try:
+            for mov in transaccion["movimientos"]:
+                # validación básica
+                if not puc.validarMovimiento(mov["cuenta"])["valido"]:
+                    raise Exception(f"Cuenta {mov['cuenta']} inválida")
+
+            asiento = {
+                "id": f"A-{self.secuencial:04d}",
+                "fecha": transaccion.get("fecha", datetime.now().strftime("%Y-%m-%d")),
+                "comprobante": transaccion.get("comprobante", f"CJ-{self.secuencial:04d}"),
+                "descripcion": transaccion.get("descripcion", ""),
+                "tercero": transaccion.get("tercero", ""),
+                "movimientos": [],
+                "totalDebito": 0,
+                "totalCredito": 0,
+            }
+
+            for mov in transaccion["movimientos"]:
+                cuenta = puc.obtenerCuenta(mov["cuenta"]) or {"nombre": "Desconocida"}
+                movimiento = {
+                    "cuenta": mov["cuenta"],
+                    "nombre": cuenta["nombre"],
+                    "detalle": mov.get("detalle", ""),
+                    "debito": mov["valor"] if mov["tipo"] == "DEBITO" else 0,
+                    "credito": mov["valor"] if mov["tipo"] == "CREDITO" else 0,
+                }
+                asiento["movimientos"].append(movimiento)
+                asiento["totalDebito"] += movimiento["debito"]
+                asiento["totalCredito"] += movimiento["credito"]
+
+            if abs(asiento["totalDebito"] - asiento["totalCredito"]) > 0.01:
+                raise Exception("No cuadra partida doble")
+
+            self.asientos.append(asiento)
+            self.secuencial += 1
+            return {"exito": True, "asiento": asiento}
+        except Exception as e:
+            return {"exito": False, "error": str(e)}
+
+    def obtener_ingresos_mes(self):
+        total = 0
+        for a in self.asientos:
+            for m in a["movimientos"]:
+                if m["cuenta"] == "4135" and m["credito"] > 0:
+                    total += m["credito"]
+        return total
+
+    def obtener_egresos_mes(self):
+        total = 0
+        for a in self.asientos:
+            for m in a["movimientos"]:
+                if m["cuenta"] in ["5105"] and m["debito"] > 0:
+                    total += m["debito"]
+        return total
+
+
+# ---------- Inicializar sistema (cache para eficiencia) ----------
+@st.cache_resource
+def init_system():
+    conta_local = Conta()
+    global puc
+    puc = PUCInteligente()
+    libro_local = LibroDiario()
+
+    # Ejemplos mínimos
+    ejemplos = [
+        {
+            "fecha": "2024-03-15",
+            "comprobante": "FV-001",
+            "descripcion": "Venta de mercancía",
+            "tercero": "Cliente A",
+            "movimientos": [
+                {"cuenta": "1305", "tipo": "DEBITO", "valor": 1190000, "detalle": "Cliente"},
+                {"cuenta": "4135", "tipo": "CREDITO", "valor": 1000000, "detalle": "Ventas"},
+                {"cuenta": "2408", "tipo": "CREDITO", "valor": 190000, "detalle": "IVA"},
+            ],
+        },
+        {
+            "fecha": "2024-03-20",
+            "comprobante": "FV-002",
+            "descripcion": "Venta servicios",
+            "tercero": "Cliente B",
+            "movimientos": [
+                {"cuenta": "110505", "tipo": "DEBITO", "valor": 500000, "detalle": "Efectivo"},
+                {"cuenta": "4135", "tipo": "CREDITO", "valor": 500000, "detalle": "Ventas"},
+            ],
+        },
+    ]
+
+    for ej in ejemplos:
+        libro_local.registrarAsiento(ej)
+
+    return conta_local, puc, libro_local
+
+
+# Cargar sistema en sesión
+if "system_loaded" not in st.session_state:
+    st.session_state.conta, st.session_state.puc, st.session_state.libro = init_system()
+    st.session_state.system_loaded = True
+
+# ---------- Header ----------
+st.markdown('<div class="header"><h1 class="small-glow">📊 tuamigocontable</h1></div>', unsafe_allow_html=True)
+st.markdown("""<div style='color: #6b7280; margin-bottom: 12px;'>Tu asistente contable minimalista — claro, rápido y seguro.</div>""", unsafe_allow_html=True)
+
+# Mostrar origen de API key (solo preview)
+if api_key:
+    preview = api_key[:4] + "..." + api_key[-4:]
+    st.caption(f"API key cargada desde: {key_source} — {preview}")
+else:
+    st.caption("API key no configurada. Para usar el asistente IA configura OPENAI_API_KEY en st.secrets o en variable de entorno.")
+
+# ---------- Métricas ----------
+with st.container():
+    ingresos = st.session_state.libro.obtener_ingresos_mes()
+    egresos = st.session_state.libro.obtener_egresos_mes()
+    balance = ingresos - egresos
+
+    c1, c2, c3 = st.columns(3)
+
+    with c1:
+        st.markdown(f"<div class='metric-card'><div class='metric-title'>Ingresos</div><div class='metric-value'>${ingresos:,.0f}</div></div>", unsafe_allow_html=True)
+    with c2:
+        st.markdown(f"<div class='metric-card'><div class='metric-title'>Egresos</div><div class='metric-value'>${egresos:,.0f}</div></div>", unsafe_allow_html=True)
+    with c3:
+        st.markdown(f"<div class='metric-card'><div class='metric-title'>Balance</div><div class='metric-value'>${balance:,.0f}</div></div>", unsafe_allow_html=True)
+
+# ---------- Acciones y Export ----------
+row = st.columns([1,1,1,1])
+with row[0]:
+    if st.button("Nueva Factura", use_container_width=True):
+        st.info("Funcionalidad en desarrollo")
+with row[1]:
+    if st.button("Inventario", use_container_width=True):
+        st.info("Funcionalidad en desarrollo")
+with row[2]:
+    if st.button("Balance", use_container_width=True):
+        st.info("Funcionalidad en desarrollo")
+with row[3]:
+    if st.button("Exportar JSON", use_container_width=True):
+        json_str = json.dumps(st.session_state.libro.asientos, indent=2, default=str)
+        st.download_button(label="Descargar asientos (JSON)", data=json_str, file_name=f"asientos_{datetime.now().strftime('%Y%m%d')}.json", mime="application/json")
+
+# ---------- Tabla de últimos movimientos ----------
+st.markdown("\n")
+st.subheader("Últimos movimientos")
+
+table_data = []
+for a in st.session_state.libro.asientos[-10:]:
+    for m in a["movimientos"]:
+        table_data.append({
+            "Fecha": a["fecha"],
+            "Comprobante": a["comprobante"],
+            "Cuenta": m["nombre"],
+            "Detalle": m["detalle"] if m.get("detalle") else "-",
+            "Débito": m["debito"] if m["debito"] > 0 else "-",
+            "Crédito": m["credito"] if m["credito"] > 0 else "-",
+            "Tercero": a["tercero"] if a.get("tercero") else "-",
+        })
+
+df = pd.DataFrame(table_data)
+st.dataframe(df, use_container_width=True, height=360)
+
+# ---------- Asistente IA (lado derecho en una columna) ----------
+st.markdown("\n")
+col_main, col_ai = st.columns([3,1])
+
+with col_ai:
+    st.markdown("### 🤖 Asistente IA")
+    if not api_key:
+        st.info("Configura OPENAI_API_KEY para activar el asistente.")
+    else:
+        if "chat" not in st.session_state:
+            st.session_state.chat = [{"role": "system", "content": "Eres un asistente contable conciso y profesional."}]
+
+        # Mostrar conversaciones previas
+        for msg in st.session_state.chat[1:]:
+            role = msg.get("role")
+            content = msg.get("content")
+            if role == "user":
+                st.markdown(f"**Tú:** {content}")
+            else:
+                st.markdown(f"**IA:** {content}")
+
+        user_input = st.text_input("Escribe tu pregunta...", key="ia_input")
+        if user_input:
+            st.session_state.chat.append({"role": "user", "content": user_input})
+            # Llamada a OpenAI
+            try:
+                with st.spinner("Generando respuesta..."):
+                    response = client.chat.completions.create(
+                        model="gpt-4o-mini",
+                        messages=st.session_state.chat,
+                        max_tokens=500,
+                    )
+
+                # Extraer texto de forma segura
+                assistant_text = None
+                if hasattr(response, "choices") and len(response.choices) > 0:
+                    choice = response.choices[0]
+                    # Manejar estructura: choice.message.content
+                    if hasattr(choice, "message") and isinstance(choice.message, dict):
+                        assistant_text = choice.message.get("content")
+                    elif hasattr(choice, "message") and hasattr(choice.message, "get"):
+                        assistant_text = choice.message.get("content")
+                    elif hasattr(choice, "text"):
+                        assistant_text = choice.text
+
+                if assistant_text is None:
+                    assistant_text = str(response)
+
+                st.session_state.chat.append({"role": "assistant", "content": assistant_text})
+                # Limpiar input
+                st.session_state.ia_input = ""
+                # Rerun para mostrar la respuesta (si es necesario)
+                st.experimental_rerun()
+
+            except Exception as e:
+                tb = traceback.format_exc()
+                st.error("Error llamando a la API de OpenAI. Revisa la key y la conexión.")
+                st.code(tb)
+
+# ---------- Footer ----------
+st.markdown("\n")
+st.markdown('<div class="footer">© {year} tuamigocontable — Minimal UI</div>'.format(year=datetime.now().year), unsafe_allow_html=True)
+
+# Mensaje final pequeño
+st.sidebar.markdown("---")
+st.sidebar.markdown("**Paleta aplicada:** Celeste • Azul oscuro • Morado • Blanco • Carbón")
+
+# Fin del archivo
