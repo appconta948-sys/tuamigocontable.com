@@ -247,75 +247,151 @@ st.markdown("---")
 st.markdown("© 2024 tuamigocontable.com - Todos los derechos reservados")
 
 # ============================================
-# CONFIGURACIÓN DE ESTILOS - PALETA PERSONALIZADA
-# ROJO, AZUL, VERDE NEÓN, AMARILLO, BLANCO, NEGRO
+# CONFIGURACIÓN DE ESTILOS - FONDO OSCURO + BOTÓN FLOTANTE
 # ============================================
 st.markdown("""
 <style>
-    /* Estilos generales */
+    /* Fondo oscuro degradado - SIN BLANCO */
     .stApp {
-        background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
         color: white;
     }
     
-    /* Tarjetas de métricas - ESTILO NEÓN */
+    /* Eliminar cualquier fondo blanco residual */
+    .stApp > header {
+        background: transparent !important;
+    }
+    .stApp > div {
+        background: transparent !important;
+    }
+    .main > div {
+        background: transparent !important;
+    }
+    
+    /* Tarjetas de métricas con neón */
     .metric-card {
-        background: #111111;
+        background: rgba(10, 10, 10, 0.8);
+        backdrop-filter: blur(10px);
         padding: 25px;
         border-radius: 20px;
-        box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
-        border: 2px solid #00ff00;
+        border: 2px solid;
         transition: all 0.3s ease;
         text-align: center;
         margin: 10px 0;
     }
-    .metric-card:hover {
-        transform: translateY(-5px) scale(1.02);
-        box-shadow: 0 0 30px #00ff00;
+    .metric-card.verde {
         border-color: #00ff00;
+        box-shadow: 0 0 30px rgba(0, 255, 0, 0.3);
     }
     .metric-card.rojo {
         border-color: #ff0000;
-        box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
-    }
-    .metric-card.rojo:hover {
-        box-shadow: 0 0 30px #ff0000;
+        box-shadow: 0 0 30px rgba(255, 0, 0, 0.3);
     }
     .metric-card.azul {
         border-color: #0000ff;
-        box-shadow: 0 0 20px rgba(0, 0, 255, 0.3);
+        box-shadow: 0 0 30px rgba(0, 0, 255, 0.3);
     }
-    .metric-card.azul:hover {
-        box-shadow: 0 0 30px #0000ff;
-    }
-    .metric-card.amarillo {
-        border-color: #ffff00;
-        box-shadow: 0 0 20px rgba(255, 255, 0, 0.3);
-    }
-    .metric-card.amarillo:hover {
-        box-shadow: 0 0 30px #ffff00;
-    }
-    .metric-title {
-        color: #ffffff;
-        font-size: 16px;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        margin-bottom: 10px;
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0 50px currentColor;
     }
     .metric-value {
-        color: #ffffff;
         font-size: 36px;
         font-weight: bold;
-        margin: 10px 0;
-        text-shadow: 0 0 10px currentColor;
-    }
-    .metric-icon {
-        font-size: 50px;
-        margin-bottom: 10px;
-        filter: drop-shadow(0 0 10px currentColor);
+        text-shadow: 0 0 20px currentColor;
     }
     
-    /* Botones de acción - ESTILO VIBRANTE */
+    /* BOTÓN FLOTANTE DE IA - ESTILO WHATSAPP */
+    .ia-float-button {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 70px;
+        height: 70px;
+        background: linear-gradient(135deg, #00ff00, #0000ff);
+        border-radius: 50%;
+        border: 3px solid #ffff00;
+        box-shadow: 0 0 30px rgba(0, 255, 0, 0.5);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 35px;
+        transition: all 0.3s ease;
+        z-index: 9999;
+        animation: pulse 2s infinite;
+    }
+    .ia-float-button:hover {
+        transform: scale(1.1) rotate(10deg);
+        box-shadow: 0 0 50px rgba(0, 255, 0, 0.8);
+        border-color: #ff0000;
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    /* VENTANA FLOTANTE DE IA */
+    .ia-window {
+        position: fixed;
+        bottom: 120px;
+        right: 30px;
+        width: 350px;
+        height: 500px;
+        background: rgba(10, 10, 10, 0.95);
+        backdrop-filter: blur(20px);
+        border: 3px solid #00ff00;
+        border-radius: 20px;
+        box-shadow: 0 0 50px rgba(0, 255, 0, 0.3);
+        display: none;
+        z-index: 9998;
+        overflow: hidden;
+    }
+    .ia-window.show {
+        display: block;
+        animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    .ia-header {
+        background: linear-gradient(135deg, #00ff00, #0000ff);
+        padding: 15px;
+        color: white;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .ia-close {
+        cursor: pointer;
+        font-size: 24px;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+    }
+    .ia-close:hover {
+        background: rgba(255,0,0,0.5);
+    }
+    .ia-content {
+        padding: 20px;
+        height: calc(100% - 60px);
+        overflow-y: auto;
+    }
+    
+    /* Botones de acción con gradiente */
     .action-button {
         background: linear-gradient(135deg, #ff0000, #0000ff, #00ff00, #ffff00);
         background-size: 300% 300%;
@@ -331,6 +407,7 @@ st.markdown("""
         text-align: center;
         margin: 5px;
         box-shadow: 0 0 20px rgba(255,255,255,0.3);
+        width: 100%;
     }
     @keyframes gradient {
         0% { background-position: 0% 50%; }
@@ -342,11 +419,11 @@ st.markdown("""
         box-shadow: 0 0 30px rgba(255,255,255,0.5);
     }
     
-    /* Tabla de movimientos - ESTILO NEÓN */
+    /* Tabla de movimientos */
     .dataframe {
+        background: rgba(0,0,0,0.5);
         border-radius: 15px;
         overflow: hidden;
-        box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);
         border: 2px solid #00ff00;
     }
     .dataframe th {
@@ -354,57 +431,13 @@ st.markdown("""
         color: #00ff00;
         font-weight: bold;
         padding: 15px !important;
-        font-size: 16px;
         border-bottom: 2px solid #00ff00;
     }
     .dataframe td {
         padding: 12px !important;
         border-bottom: 1px solid #333;
         color: white;
-    }
-    .dataframe tr:hover {
-        background: rgba(255, 255, 255, 0.1);
-    }
-    
-    /* Chat - ESTILO NEÓN */
-    .chat-container {
-        background: #111111;
-        border-radius: 20px;
-        padding: 25px;
-        margin-top: 30px;
-        border: 2px solid #00ff00;
-        box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);
-    }
-    .chat-title {
-        color: #00ff00 !important;
-        font-size: 24px;
-        margin-bottom: 20px;
-        text-shadow: 0 0 10px #00ff00;
-    }
-    
-    /* Títulos y textos */
-    h1, h2, h3 {
-        color: #ffffff !important;
-        text-shadow: 0 0 10px #00ff00;
-    }
-    h1 {
-        font-size: 48px !important;
-        background: linear-gradient(135deg, #ff0000, #0000ff, #00ff00, #ffff00);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        animation: gradient 5s ease infinite;
-        background-size: 300% 300%;
-    }
-    
-    /* Inputs y selects */
-    .stTextInput input, .stSelectbox select {
-        background: #111111 !important;
-        color: white !important;
-        border: 2px solid #00ff00 !important;
-        border-radius: 10px !important;
-    }
-    .stTextInput input:focus, .stSelectbox select:focus {
-        box-shadow: 0 0 20px #00ff00 !important;
+        background: rgba(0,0,0,0.3);
     }
     
     /* Footer */
@@ -414,18 +447,74 @@ st.markdown("""
         margin-top: 50px;
         color: rgba(255,255,255,0.7);
         border-top: 2px solid #00ff00;
-        background: #111111;
+        background: rgba(0,0,0,0.5);
         border-radius: 15px;
     }
 </style>
+
+<!-- HTML para el botón flotante y ventana IA -->
+<div id="ia-button" class="ia-float-button" onclick="toggleIA()">
+    🤖
+</div>
+
+<div id="ia-window" class="ia-window">
+    <div class="ia-header">
+        <span>🤖 ASISTENTE IA</span>
+        <span class="ia-close" onclick="toggleIA()">✖</span>
+    </div>
+    <div class="ia-content" id="ia-content">
+        <div style="color: #00ff00; margin-bottom: 20px; text-align: center;">
+            ⚡ CONECTADO ⚡
+        </div>
+        <div id="chat-messages" style="height: 300px; overflow-y: auto; margin-bottom: 20px;">
+            <div style="color: #00ff00; margin-bottom: 10px;">
+                🤖 IA: Hola, soy tu asistente contable. ¿En qué puedo ayudarte?
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="user-input" placeholder="Escribe tu consulta..." 
+                   style="flex: 1; padding: 10px; border: 2px solid #00ff00; background: black; color: white; border-radius: 10px;">
+            <button onclick="sendMessage()" style="background: #00ff00; color: black; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer;">➤</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleIA() {
+    var window = document.getElementById('ia-window');
+    window.classList.toggle('show');
+}
+
+function sendMessage() {
+    var input = document.getElementById('user-input');
+    var message = input.value;
+    if (!message) return;
+    
+    var chat = document.getElementById('chat-messages');
+    
+    // Mensaje del usuario
+    chat.innerHTML += '<div style="color: #ffff00; text-align: right; margin: 10px 0;">👤 Tú: ' + message + '</div>';
+    
+    // Simular respuesta (luego conectaremos con la IA real)
+    setTimeout(function() {
+        chat.innerHTML += '<div style="color: #00ff00; margin: 10px 0;">🤖 IA: Procesando consulta: "' + message + '". (IA en desarrollo)</div>';
+        chat.scrollTop = chat.scrollHeight;
+    }, 1000);
+    
+    input.value = '';
+    chat.scrollTop = chat.scrollHeight;
+}
+</script>
 """, unsafe_allow_html=True)
 
 # ============================================
-# ENCABEZADO CON EFECTO NEÓN
+# ENCABEZADO
 # ============================================
 st.markdown("""
 <div style="text-align: center; padding: 30px 0;">
-    <h1>📊 TUAMIGOCONTABLE.COM</h1>
+    <h1 style="font-size: 48px; background: linear-gradient(135deg, #ff0000, #0000ff, #00ff00, #ffff00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: gradient 5s ease infinite; background-size: 300% 300%;">
+        📊 TUAMIGOCONTABLE.COM
+    </h1>
     <p style="color: #00ff00; font-size: 20px; text-shadow: 0 0 10px #00ff00;">
         ⚡ Tu asistente contable inteligente ⚡
     </p>
@@ -433,7 +522,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ============================================
-# MÉTRICAS EN TARJETAS DE COLORES
+# MÉTRICAS
 # ============================================
 ingresos = st.session_state.libro.obtener_ingresos_mes()
 egresos = st.session_state.libro.obtener_egresos_mes()
@@ -444,8 +533,8 @@ col1, col2, col3 = st.columns(3)
 with col1:
     st.markdown(f"""
     <div class="metric-card verde">
-        <div class="metric-icon">🟢</div>
-        <div class="metric-title">INGRESOS DEL MES</div>
+        <div style="font-size: 50px; margin-bottom: 10px;">🟢</div>
+        <div class="metric-title">INGRESOS</div>
         <div class="metric-value" style="color: #00ff00;">${ingresos:,.0f}</div>
         <div style="color: #00ff00;">↑ +12%</div>
     </div>
@@ -454,8 +543,8 @@ with col1:
 with col2:
     st.markdown(f"""
     <div class="metric-card rojo">
-        <div class="metric-icon">🔴</div>
-        <div class="metric-title">EGRESOS DEL MES</div>
+        <div style="font-size: 50px; margin-bottom: 10px;">🔴</div>
+        <div class="metric-title">EGRESOS</div>
         <div class="metric-value" style="color: #ff0000;">${egresos:,.0f}</div>
         <div style="color: #ff0000;">↓ -5%</div>
     </div>
@@ -464,67 +553,45 @@ with col2:
 with col3:
     st.markdown(f"""
     <div class="metric-card azul">
-        <div class="metric-icon">🔵</div>
-        <div class="metric-title">BALANCE DEL MES</div>
+        <div style="font-size: 50px; margin-bottom: 10px;">🔵</div>
+        <div class="metric-title">BALANCE</div>
         <div class="metric-value" style="color: #0000ff;">${balance:,.0f}</div>
         <div style="color: #0000ff;">⚖️ Positivo</div>
     </div>
     """, unsafe_allow_html=True)
 
 # ============================================
-# BOTONES DE ACCIÓN (CON ESTILO GRADIENTE)
+# BOTONES DE ACCIÓN
 # ============================================
 st.markdown("<br>", unsafe_allow_html=True)
 
 col1, col2, col3, col4, col5 = st.columns(5)
 
 with col1:
-    st.markdown("""
-    <div class="action-button" onclick="alert('Factura en desarrollo')">
-        📄 FACTURA
-    </div>
-    """, unsafe_allow_html=True)
-
+    if st.button("📄 FACTURA", use_container_width=True):
+        st.info("Funcionalidad en desarrollo")
 with col2:
-    st.markdown("""
-    <div class="action-button" onclick="alert('Inventario en desarrollo')">
-        📦 INVENTARIO
-    </div>
-    """, unsafe_allow_html=True)
-
+    if st.button("📦 INVENTARIO", use_container_width=True):
+        st.info("Funcionalidad en desarrollo")
 with col3:
-    st.markdown("""
-    <div class="action-button" onclick="alert('Balance en desarrollo')">
-        ⚖️ BALANCE
-    </div>
-    """, unsafe_allow_html=True)
-
+    if st.button("⚖️ BALANCE", use_container_width=True):
+        st.info("Funcionalidad en desarrollo")
 with col4:
-    st.markdown("""
-    <div class="action-button" onclick="alert('IA en desarrollo')">
-        🤖 IA
-    </div>
-    """, unsafe_allow_html=True)
-
+    if st.button("🤖 IA", use_container_width=True):
+        toggle_script = "<script>toggleIA();</script>"
+        st.markdown(toggle_script, unsafe_allow_html=True)
 with col5:
-    st.markdown("""
-    <div class="action-button" onclick="document.getElementById('export-btn').click()">
-        📥 EXPORTAR
-    </div>
-    """, unsafe_allow_html=True)
-
-# Botón oculto para exportar (funcional)
-json_str = json.dumps(st.session_state.libro.asientos, indent=2, default=str)
-st.download_button(
-    label="Descargar",
-    data=json_str,
-    file_name=f"asientos_{datetime.now().strftime('%Y%m%d')}.json",
-    mime="application/json",
-    key="export-btn"
-)
+    if st.button("📥 EXPORTAR", use_container_width=True):
+        json_str = json.dumps(st.session_state.libro.asientos, indent=2, default=str)
+        st.download_button(
+            label="Descargar JSON",
+            data=json_str,
+            file_name=f"asientos_{datetime.now().strftime('%Y%m%d')}.json",
+            mime="application/json"
+        )
 
 # ============================================
-# TABLA DE MOVIMIENTOS (ESTILO NEÓN)
+# TABLA DE MOVIMIENTOS
 # ============================================
 st.markdown("<br>", unsafe_allow_html=True)
 st.markdown('<h2 style="color: #00ff00;">📋 ÚLTIMOS MOVIMIENTOS</h2>', unsafe_allow_html=True)
@@ -532,7 +599,6 @@ st.markdown('<h2 style="color: #00ff00;">📋 ÚLTIMOS MOVIMIENTOS</h2>', unsafe
 data = []
 for a in st.session_state.libro.asientos[-10:]:
     for m in a["movimientos"]:
-        # Determinar icono según tipo
         icono = "🔴" if m["debito"] > 0 else "🟢"
         data.append({
             " ": icono,
@@ -546,32 +612,10 @@ for a in st.session_state.libro.asientos[-10:]:
         })
 
 df = pd.DataFrame(data)
-
-# Aplicar estilos a la tabla
-styled_df = df.style.applymap(
-    lambda x: 'color: #00ff00' if x == '🟢' else ('color: #ff0000' if x == '🔴' else 'color: #ffffff'),
-    subset=[' ']
-)
-
-st.dataframe(styled_df, use_container_width=True, height=400)
+st.dataframe(df, use_container_width=True, height=400)
 
 # ============================================
-# CHAT CON ESTILO AMARILLO
-# ============================================
-st.markdown("<br>", unsafe_allow_html=True)
-st.markdown("""
-<div class="chat-container">
-    <h2 class="chat-title">🤖 ASISTENTE IA - CHATGPT</h2>
-""", unsafe_allow_html=True)
-
-mensaje = st.chat_input("💬 Escribe tu consulta contable aquí...")
-if mensaje:
-    st.info("⚡ Funcionalidad IA en desarrollo - Pronto estará disponible")
-
-st.markdown("</div>", unsafe_allow_html=True)
-
-# ============================================
-# FOOTER CON COLORES
+# FOOTER
 # ============================================
 st.markdown("""
 <div class="footer">
@@ -582,6 +626,5 @@ st.markdown("""
         <span style="color: #ffff00;">💛</span>
     </p>
     <p>© 2024 tuamigocontable.com - Todos los derechos reservados</p>
-    <p style="font-size: 12px; color: #00ff00;">⚡ Modo Neón Activado ⚡</p>
 </div>
 """, unsafe_allow_html=True)
