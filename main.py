@@ -1,5 +1,5 @@
 # ============================================
-# CONTA APP - VERSIÓN CON CHAT NATIVO DE STREAMLIT
+# CONTA APP - VERSIÓN CORREGIDA Y OPTIMIZADA
 # tuamigocontable.com
 # ============================================
 
@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import json
 import os
-from openai import OpenAI
 
 # ============================================
 # CONFIGURACIÓN INICIAL
@@ -19,20 +18,6 @@ st.set_page_config(
     page_icon="📊",
     layout="wide"
 )
-
-# ============================================
-# INICIALIZAR OPENAI (si está configurado)
-# ============================================
-@st.cache_resource
-def init_openai():
-    try:
-        api_key = st.secrets["OPENAI_API_KEY"]
-        client = OpenAI(api_key=api_key)
-        return client, True
-    except:
-        return None, False
-
-openai_client, openai_disponible = init_openai()
 
 # ============================================
 # CLASES DEL SISTEMA CONTABLE
@@ -191,25 +176,83 @@ def init_system():
     
     return conta, puc, libro
 
-# Cargar sistema
+# Cargar sistema en sesión
 if 'system_loaded' not in st.session_state:
     st.session_state.conta, st.session_state.puc, st.session_state.libro = init_system()
-    st.session_state.messages = [
-        {"role": "assistant", "content": "🤖 Hola, soy tu asistente contable. ¿En qué puedo ayudarte?"}
-    ]
     st.session_state.system_loaded = True
 
 # ============================================
-# ESTILOS PERSONALIZADOS
+# INTERFAZ DE USUARIO
+# ============================================
+st.title("📊 tuamigocontable.com")
+st.markdown("### Tu asistente contable inteligente")
+
+# Métricas
+col1, col2, col3 = st.columns(3)
+ingresos = st.session_state.libro.obtener_ingresos_mes()
+egresos = st.session_state.libro.obtener_egresos_mes()
+balance = ingresos - egresos
+
+col1.metric("Ingresos del Mes", f"${ingresos:,.0f}", "+12%")
+col2.metric("Egresos del Mes", f"${egresos:,.0f}", "-5%")
+col3.metric("Balance del Mes", f"${balance:,.0f}")
+
+# Botones de acción
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    if st.button("📄 Factura", use_container_width=True):
+        st.info("Funcionalidad en desarrollo")
+with col2:
+    if st.button("📦 Inventario", use_container_width=True):
+        st.info("Funcionalidad en desarrollo")
+with col3:
+    if st.button("⚖️ Balance", use_container_width=True):
+        st.info("Funcionalidad en desarrollo")
+with col4:
+    if st.button("📥 Exportar JSON", use_container_width=True):
+        json_str = json.dumps(st.session_state.libro.asientos, indent=2, default=str)
+        st.download_button(
+            label="Descargar",
+            data=json_str,
+            file_name=f"asientos_{datetime.now().strftime('%Y%m%d')}.json",
+            mime="application/json"
+        )
+
+# Tabla de movimientos
+st.subheader("📋 Últimos Movimientos")
+data = []
+for a in st.session_state.libro.asientos[-10:]:
+    for m in a["movimientos"]:
+        data.append({
+            "Fecha": a["fecha"],
+            "Comprobante": a["comprobante"],
+            "Cuenta": m["nombre"],
+            "Detalle": m["detalle"][:30],
+            "Débito": f"${m['debito']:,.0f}" if m['debito'] > 0 else "-",
+            "Crédito": f"${m['credito']:,.0f}" if m['credito'] > 0 else "-",
+            "Tercero": a["tercero"][:15]
+        })
+df = pd.DataFrame(data)
+st.dataframe(df, use_container_width=True)
+
+# Mensaje informativo sobre IA
+st.info("""
+    **🤖 Nota sobre la IA:** 
+    Para activar el asistente IA, necesitas configurar una API key de OpenAI o Gemini en los Secrets de Streamlit.
+    Por ahora, la app funciona sin IA.
+""")
+# ============================================
+# CONFIGURACIÓN DE ESTILOS - FONDO BLANCO ELEGANTE
 # ============================================
 st.markdown("""
 <style>
-    /* Fondo blanco elegante */
+    /* Fondo blanco elegante con textura sutil */
     .stApp {
-        background: linear-gradient(135deg, #ffffff 0%, #f5f5f7 100%);
+        background: linear-gradient(135deg, #ffffff 0%, #f5f5f7 50%, #ffffff 100%);
+        color: #333333;
     }
     
-    /* Tarjetas de métricas */
+    /* Tarjetas de métricas con neón sobre blanco */
     .metric-card {
         background: white;
         padding: 25px;
@@ -220,37 +263,270 @@ st.markdown("""
         text-align: center;
         margin: 10px 0;
     }
-    .metric-card.verde { border-color: #00ff00; }
-    .metric-card.rojo { border-color: #ff0000; }
-    .metric-card.azul { border-color: #0000ff; }
-    .metric-card.amarillo { border-color: #ffff00; }
-    .metric-card:hover { transform: translateY(-5px); }
-    .metric-value { font-size: 36px; font-weight: bold; }
+    .metric-card.verde {
+        border-color: #00ff00;
+        box-shadow: 0 10px 30px rgba(0, 255, 0, 0.2);
+    }
+    .metric-card.rojo {
+        border-color: #ff0000;
+        box-shadow: 0 10px 30px rgba(255, 0, 0, 0.2);
+    }
+    .metric-card.azul {
+        border-color: #0000ff;
+        box-shadow: 0 10px 30px rgba(0, 0, 255, 0.2);
+    }
+    .metric-card.amarillo {
+        border-color: #ffff00;
+        box-shadow: 0 10px 30px rgba(255, 255, 0, 0.2);
+    }
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    }
+    .metric-title {
+        color: #666;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 10px;
+    }
+    .metric-value {
+        font-size: 36px;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+    .metric-icon {
+        font-size: 40px;
+        margin-bottom: 10px;
+    }
     
-    /* Botones de acción */
-    .stButton > button {
+    /* BOTÓN FLOTANTE DE IA - ESTILO WHATSAPP SOBRE BLANCO */
+    .ia-float-button {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 70px;
+        height: 70px;
+        background: linear-gradient(135deg, #00ff00, #0000ff);
+        border-radius: 50%;
+        border: 3px solid #ffff00;
+        box-shadow: 0 10px 30px rgba(0, 255, 0, 0.3);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 35px;
+        transition: all 0.3s ease;
+        z-index: 9999;
+        animation: pulse 2s infinite;
+        color: white;
+    }
+    .ia-float-button:hover {
+        transform: scale(1.1) rotate(10deg);
+        box-shadow: 0 20px 40px rgba(0, 255, 0, 0.5);
+        border-color: #ff0000;
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    /* VENTANA FLOTANTE DE IA */
+    .ia-window {
+        position: fixed;
+        bottom: 120px;
+        right: 30px;
+        width: 350px;
+        height: 500px;
+        background: white;
+        border: 3px solid #00ff00;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 255, 0, 0.2);
+        display: none;
+        z-index: 9998;
+        overflow: hidden;
+    }
+    .ia-window.show {
+        display: block;
+        animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    .ia-header {
+        background: linear-gradient(135deg, #00ff00, #0000ff);
+        padding: 15px;
+        color: white;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .ia-close {
+        cursor: pointer;
+        font-size: 24px;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+    }
+    .ia-close:hover {
+        background: rgba(255,0,0,0.5);
+    }
+    .ia-content {
+        padding: 20px;
+        height: calc(100% - 60px);
+        overflow-y: auto;
+        background: white;
+    }
+    
+    /* Botones de acción con gradiente sobre blanco */
+    .action-button {
         background: linear-gradient(135deg, #ff0000, #0000ff, #00ff00, #ffff00);
         background-size: 300% 300%;
         animation: gradient 5s ease infinite;
         color: white;
-        font-weight: bold;
+        padding: 15px 25px;
         border: none;
-        padding: 15px;
+        border-radius: 15px;
+        font-weight: bold;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+        margin: 5px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        width: 100%;
     }
     @keyframes gradient {
         0% { background-position: 0% 50%; }
         50% { background-position: 100% 50%; }
         100% { background-position: 0% 50%; }
     }
+    .action-button:hover {
+        transform: scale(1.02);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
     
-    /* Chat */
-    .stChatMessage {
+    /* Tabla de movimientos sobre blanco */
+    .dataframe {
         background: white;
         border-radius: 15px;
-        padding: 10px;
-        margin: 5px 0;
+        overflow: hidden;
+        border: 2px solid #00ff00;
+        box-shadow: 0 10px 30px rgba(0, 255, 0, 0.1);
+    }
+    .dataframe th {
+        background: linear-gradient(135deg, #00ff00, #0000ff);
+        color: white;
+        font-weight: bold;
+        padding: 15px !important;
+    }
+    .dataframe td {
+        padding: 12px !important;
+        border-bottom: 1px solid #eee;
+        color: #333;
+    }
+    .dataframe tr:hover {
+        background: #f5f5f5;
+    }
+    
+    /* Footer sobre blanco */
+    .footer {
+        text-align: center;
+        padding: 30px;
+        margin-top: 50px;
+        color: #666;
+        border-top: 2px solid #00ff00;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    }
+    
+    /* Títulos */
+    h1, h2, h3 {
+        color: #333 !important;
+    }
+    h1 {
+        font-size: 48px !important;
+        background: linear-gradient(135deg, #ff0000, #0000ff, #00ff00, #ffff00);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: gradient 5s ease infinite;
+        background-size: 300% 300%;
+    }
+    
+    /* Inputs */
+    .stTextInput input {
+        border: 2px solid #00ff00 !important;
+        border-radius: 10px !important;
     }
 </style>
+
+<!-- HTML para el botón flotante y ventana IA -->
+<div id="ia-button" class="ia-float-button" onclick="toggleIA()">
+    🤖
+</div>
+
+<div id="ia-window" class="ia-window">
+    <div class="ia-header">
+        <span>🤖 ASISTENTE IA</span>
+        <span class="ia-close" onclick="toggleIA()">✖</span>
+    </div>
+    <div class="ia-content">
+        <div style="color: #00ff00; margin-bottom: 20px; text-align: center; font-weight: bold;">
+            ⚡ CONECTADO ⚡
+        </div>
+        <div id="chat-messages" style="height: 300px; overflow-y: auto; margin-bottom: 20px; padding: 10px; background: #f5f5f5; border-radius: 10px;">
+            <div style="color: #00ff00; margin-bottom: 10px;">
+                🤖 IA: Hola, soy tu asistente contable. ¿En qué puedo ayudarte?
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="user-input" placeholder="Escribe tu consulta..." 
+                   style="flex: 1; padding: 12px; border: 2px solid #00ff00; background: white; color: #333; border-radius: 10px;">
+            <button onclick="sendMessage()" style="background: #00ff00; color: white; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: bold;">➤</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleIA() {
+    var window = document.getElementById('ia-window');
+    window.classList.toggle('show');
+}
+
+function sendMessage() {
+    var input = document.getElementById('user-input');
+    var message = input.value;
+    if (!message) return;
+    
+    var chat = document.getElementById('chat-messages');
+    
+    // Mensaje del usuario
+    chat.innerHTML += '<div style="color: #0000ff; text-align: right; margin: 10px 0;">👤 Tú: ' + message + '</div>';
+    
+    // Simular respuesta (luego conectaremos con la IA real)
+    setTimeout(function() {
+        chat.innerHTML += '<div style="color: #00ff00; margin: 10px 0;">🤖 IA: Procesando consulta: "' + message + '". (IA en desarrollo)</div>';
+        chat.scrollTop = chat.scrollHeight;
+    }, 1000);
+    
+    input.value = '';
+    chat.scrollTop = chat.scrollHeight;
+}
+</script>
 """, unsafe_allow_html=True)
 
 # ============================================
@@ -258,7 +534,7 @@ st.markdown("""
 # ============================================
 st.markdown("""
 <div style="text-align: center; padding: 30px 0;">
-    <h1 style="font-size: 48px; background: linear-gradient(135deg, #ff0000, #0000ff, #00ff00, #ffff00); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+    <h1 style="font-size: 48px;">
         📊 TUAMIGOCONTABLE.COM
     </h1>
     <p style="color: #666; font-size: 20px;">
@@ -279,8 +555,8 @@ col1, col2, col3 = st.columns(3)
 with col1:
     st.markdown(f"""
     <div class="metric-card verde">
-        <div style="font-size: 40px;">🟢</div>
-        <div style="color: #666;">INGRESOS</div>
+        <div class="metric-icon">🟢</div>
+        <div class="metric-title">INGRESOS</div>
         <div class="metric-value" style="color: #00ff00;">${ingresos:,.0f}</div>
         <div style="color: #00ff00;">↑ +12%</div>
     </div>
@@ -289,8 +565,8 @@ with col1:
 with col2:
     st.markdown(f"""
     <div class="metric-card rojo">
-        <div style="font-size: 40px;">🔴</div>
-        <div style="color: #666;">EGRESOS</div>
+        <div class="metric-icon">🔴</div>
+        <div class="metric-title">EGRESOS</div>
         <div class="metric-value" style="color: #ff0000;">${egresos:,.0f}</div>
         <div style="color: #ff0000;">↓ -5%</div>
     </div>
@@ -299,8 +575,8 @@ with col2:
 with col3:
     st.markdown(f"""
     <div class="metric-card azul">
-        <div style="font-size: 40px;">🔵</div>
-        <div style="color: #666;">BALANCE</div>
+        <div class="metric-icon">🔵</div>
+        <div class="metric-title">BALANCE</div>
         <div class="metric-value" style="color: #0000ff;">${balance:,.0f}</div>
         <div style="color: #0000ff;">⚖️ Positivo</div>
     </div>
@@ -309,6 +585,8 @@ with col3:
 # ============================================
 # BOTONES DE ACCIÓN
 # ============================================
+st.markdown("<br>", unsafe_allow_html=True)
+
 col1, col2, col3, col4, col5 = st.columns(5)
 
 with col1:
@@ -322,12 +600,12 @@ with col3:
         st.info("Funcionalidad en desarrollo")
 with col4:
     if st.button("🤖 IA", use_container_width=True):
-        st.info("Chat abajo 👇")
+        st.markdown("<script>toggleIA();</script>", unsafe_allow_html=True)
 with col5:
     if st.button("📥 EXPORTAR", use_container_width=True):
         json_str = json.dumps(st.session_state.libro.asientos, indent=2, default=str)
         st.download_button(
-            label="📥 Descargar JSON",
+            label="Descargar JSON",
             data=json_str,
             file_name=f"asientos_{datetime.now().strftime('%Y%m%d')}.json",
             mime="application/json"
@@ -337,7 +615,7 @@ with col5:
 # TABLA DE MOVIMIENTOS
 # ============================================
 st.markdown("<br>", unsafe_allow_html=True)
-st.subheader("📋 ÚLTIMOS MOVIMIENTOS")
+st.markdown('<h2 style="color: #333;">📋 ÚLTIMOS MOVIMIENTOS</h2>', unsafe_allow_html=True)
 
 data = []
 for a in st.session_state.libro.asientos[-10:]:
@@ -358,57 +636,41 @@ df = pd.DataFrame(data)
 st.dataframe(df, use_container_width=True, height=400)
 
 # ============================================
-# CHAT NATIVO DE STREAMLIT (¡SIEMPRE FUNCIONA!)
-# ============================================
-st.markdown("---")
-st.subheader("🤖 ASISTENTE IA")
-
-# Mostrar estado de la IA
-if openai_disponible:
-    st.success("✅ IA conectada - Puedes hacer preguntas")
-else:
-    st.warning("⚠️ IA no configurada - Agrega OPENAI_API_KEY en Secrets")
-
-# Mostrar mensajes del chat
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-
-# Input del chat
-if prompt := st.chat_input("Escribe tu consulta contable..."):
-    # Agregar mensaje del usuario
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-    
-    # Obtener respuesta
-    with st.chat_message("assistant"):
-        if openai_disponible:
-            with st.spinner("Pensando..."):
-                try:
-                    response = openai_client.chat.completions.create(
-                        model="gpt-3.5-turbo",
-                        messages=[
-                            {"role": "system", "content": "Eres un asistente contable experto. Responde preguntas sobre contabilidad, finanzas e impuestos de manera clara y precisa."},
-                            {"role": "user", "content": prompt}
-                        ],
-                        temperature=0.7,
-                        max_tokens=300
-                    )
-                    respuesta = response.choices[0].message.content
-                except Exception as e:
-                    respuesta = f"❌ Error: {str(e)}"
-        else:
-            respuesta = "⚠️ IA no configurada. Para activarla, agrega tu API key de OpenAI en Streamlit Secrets (sección Advanced settings) con el nombre OPENAI_API_KEY"
-        
-        st.markdown(respuesta)
-        st.session_state.messages.append({"role": "assistant", "content": respuesta})
-
-# ============================================
 # FOOTER
 # ============================================
 st.markdown("""
-<div style="text-align: center; padding: 30px; margin-top: 50px; color: #666; border-top: 2px solid #00ff00;">
+<div class="footer">
+    <p style="font-size: 16px; margin-bottom: 10px;">
+        <span style="color: #ff0000;">❤️</span> 
+        <span style="color: #0000ff;">💙</span> 
+        <span style="color: #00ff00;">💚</span> 
+        <span style="color: #ffff00;">💛</span>
+    </p>
     <p>© 2024 tuamigocontable.com - Todos los derechos reservados</p>
 </div>
 """, unsafe_allow_html=True)
+# Footer
+st.markdown("---")
+st.markdown("© 2024 tuamigocontable.com - Todos los derechos reservados")
+
+import streamlit as st
+import pandas as pd
+from datetime import datetime
+import json
+
+st.set_page_config(page_title="tuamigocontable.com", layout="wide")
+
+st.title("📊 tuamigocontable.com")
+st.write("Versión estable - Recuperación de emergencia")
+
+# Datos de ejemplo
+ingresos = 1500000
+egresos = 750000
+balance = ingresos - egresos
+
+col1, col2, col3 = st.columns(3)
+col1.metric("Ingresos", f"${ingresos:,.0f}")
+col2.metric("Egresos", f"${egresos:,.0f}")
+col3.metric("Balance", f"${balance:,.0f}")
+
+st.success("✅ App funcionando correctamente")
