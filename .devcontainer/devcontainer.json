@@ -37,6 +37,51 @@ st.markdown(
 # ... resto de tu código
 with st.sidebar:
     st.title("Asistente IA")
+    # import streamlit as st
+import openai  # O la librería de Gemini que prefieras
+
+# 1. Intentar obtener la clave de los Secrets
+api_key = st.secrets.get("OPENAI_API_KEY")
+
+st.divider()
+st.subheader("🤖 Asistente Contable Inteligente")
+
+if not api_key:
+    st.info("💡 Nota: El asistente está en modo lectura. Configura la API Key en los Secrets para chatear.")
+else:
+    # Configurar el cliente de IA
+    openai.api_key = api_key
+
+    # Inicializar historial
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    # Mostrar mensajes
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
+    # Entrada de chat
+    if prompt := st.chat_input("¿Cuál es el balance de este mes?"):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        # Llamada real a la IA
+        try:
+            response = openai.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=st.session_state.messages
+            )
+            full_response = response.choices[0].message.content
+            
+            with st.chat_message("assistant"):
+                st.markdown(full_response)
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
+        except Exception as e:
+            st.error(f"Hubo un error con la IA: {e}")
+with st.sidebar:
+    st.title("Asistente IA")
     # Aquí puedes poner el código del chat mencionado en el punto 1
     # Esto mantendrá el chat siempre visible a la izquierda
 
