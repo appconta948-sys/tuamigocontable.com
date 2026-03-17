@@ -1,7 +1,9 @@
 streamlit
-google-generativeai
 pandas
 matplotlib
 openpyxl
 xlsxwriter
 requests
+openai
+
+
