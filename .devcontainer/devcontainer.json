@@ -428,4 +428,5 @@ st.markdown('<div class="footer">© {year} tuamigocontable — Minimal UI</div>'
 st.sidebar.markdown("---")
 st.sidebar.markdown("**Paleta aplicada:** Celeste • Azul oscuro • Morado • Blanco • Carbón")
 
+st.write(os.getenv("OPENAI_API_KEY"))
 # Fin del archivo
