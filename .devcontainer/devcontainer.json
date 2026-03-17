@@ -7,6 +7,7 @@ Reemplaza tu main.py por este archivo. Incluye:
 - Conexión con OpenAI (usa OPENAI_API_KEY en st.secrets o en variable de entorno)
 - Manejo de sesiones y descarga JSON
 """
+pip install streamlit
 
 import streamlit as st
 import pandas as pd
