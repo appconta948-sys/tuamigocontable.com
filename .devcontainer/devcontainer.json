@@ -16,6 +16,30 @@ import json
 import os
 import traceback
 from dotenv import load_dotenv
+import streamlit as st
+
+# ESTO VA AL INICIO
+st.markdown(
+    """
+    <style>
+    /* Forzar que el chat flotante esté por encima de todo */
+    iframe {
+        z-index: 99999 !important;
+    }
+    .stChatFloatingInputContainer {
+        bottom: 20px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# ... resto de tu código
+with st.sidebar:
+    st.title("Asistente IA")
+    # Aquí puedes poner el código del chat mencionado en el punto 1
+    # Esto mantendrá el chat siempre visible a la izquierda
+
 
 # SDK OpenAI (nueva interfaz)
 try:
