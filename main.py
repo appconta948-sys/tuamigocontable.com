@@ -444,3 +444,6 @@ function openIAFromMenu() {
 }
 </script>
 """, unsafe_allow_html=True)
+with col4:
+    if st.button("🤖 IA", use_container_width=True):
+        st.markdown("<script>openIAFromMenu();</script>", unsafe_allow_html=True)
