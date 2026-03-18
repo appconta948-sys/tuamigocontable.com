@@ -1,1 +1,3 @@
-plantillas de procesos contables 
+# REGISTRO DIARIO 
+| Puc | Fecha | Detalle | Debito | Crédito |
+| :--- | :--- | :--- | :--- | :--- |
