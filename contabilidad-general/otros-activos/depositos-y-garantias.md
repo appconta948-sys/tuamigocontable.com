@@ -1,1 +1,0 @@
-Otros Activos: En esta categoría se incluyen aquellos activos que no se clasifican en las dos categorías anteriores, es decir, los que no se convertirán en efectivo en un periodo corto, forman parte del activo fijo tangible.
