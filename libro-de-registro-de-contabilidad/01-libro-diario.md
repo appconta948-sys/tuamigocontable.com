@@ -9,7 +9,8 @@ Para que el Libro Diario de "el lento" tenga validez, debe cumplir con:
 * **Orden Cronológico:** Registro por fecha de cada evento o transacción. No se permiten saltos de tiempo.
 * **Foliación:** Cada página (archivo) debe estar enumerada (foliada) para mantener el control correlativo.
 * **Unidad de Información:** Presenta en un solo sitio toda la información relacionada con una transacción específica.
-* **Claridad:** Cada asiento debe llevar una breve explicación (Glosa) que aclare el origen del movimiento.
+* **Claridad:** Cada asiento debe llevar una breve explicación (Glosa) que aclare el origen del movimiento. 
+
 
 ### 1.3 Estructura del Asiento (La Tabla)
 Cada registro en este libro debe identificar:
