@@ -4,7 +4,7 @@ import bcrypt
 import os
 import psycopg2
 from psycopg2 import sql
-from dotenv import load_dotoreENV  # <-- CORRECCIÓN: debe ser load_dotenv
+from dotenv import load_dotenv
 from datetime import datetime
 
 # Cargar variables de entorno
