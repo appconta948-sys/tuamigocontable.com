@@ -1,4 +1,4 @@
-# PUC (TABLA 18 - CODIFICADOR)
+# PUC (CODIFICADOR)
 | Nombre de la Cuenta | Código | Tipo |
 | :--- | :--- | :--- |
 | **CAJA GENERAL** | 1105 | Activo |
