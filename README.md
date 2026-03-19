@@ -114,4 +114,14 @@ graph LR
     C --> D[Libro Mayor]
     D --> E[Estados Financieros]
 
+---
+
+### 🕵️‍♂️ ¿Por qué me la imagino así?
+
+1.  **Enfoque de "Escudo":** Lo primero que se ve es la base legal. Si llega un inspector, lo primero que quiere ver es el cumplimiento.
+2.  **Visual (Mermaid):** He incluido un pequeño diagrama de flujo (que GitHub renderiza automáticamente) para que se entienda que la info viaja de los auxiliares al balance final.
+3.  **Acceso Rápido:** Todo está a un clic. Nada de buscar en carpetas perdidas.
+
+**¿Qué te parece esta "fachada" para el proyecto?** Si te gusta, podemos empezar a pulir los detalles de los **Módulos Tecnológicos** que faltaban. 📊📉💾🚀
+
 
