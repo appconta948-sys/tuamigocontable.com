@@ -1,4 +1,0 @@
-# Balance General 
-| Balance General  |
-| :--- | :--- | :--- | 
-| | | | |
