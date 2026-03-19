@@ -1,4 +1,4 @@
-# LIBRO MAYOR DE CUENTAS POR COBRAR (TABLA 22)
+# LIBRO MAYOR DE CUENTAS POR COBRAR 
 **Cliente:** _________________  
 **Dirección:** _______________ **Teléfono:** _______________
 
