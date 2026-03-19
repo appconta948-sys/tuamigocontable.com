@@ -1,19 +1,25 @@
-# [registro-diario.md] - CUENTA: CLIENTES / CTAS. POR COBRAR (CÓDIGO 1305)
+# [registro-diario.md] - CUENTAS POR COBRAR (ESTÁNDAR LATAM)
 
-Esta cuenta representa el derecho de la empresa a reclamar dinero a terceros por ventas o servicios realizados "a crédito". Es un **Activo Corriente**.
+Esta cuenta (Código 1305) representa el derecho de cobro. Según la **NIC 32 y 39**, es un instrumento financiero que debe medirse por su valor de realización.
 
-## 1. Composición del Monto (Fórmula UP)
-Cuando registres una venta a crédito en el **REGISTRO DIARIO**, el monto debe ser:
-> **Valor del Producto/Servicio + Impuesto Local (IVA/ITBMS) = Cuenta por Cobrar.**
+## 1. Localización del Impuesto (Cálculo Automático)
+Para que el **REGISTRO DIARIO** sea global, el monto del "Débito" debe ajustarse según la tasa local:
 
-## 2. Dinámica en el REGISTRO DIARIO
-* **Aumenta (DÉBITO +):** Cuando entregas el producto o servicio pero NO recibes el dinero de inmediato. 
-    * *Ejemplo (PAN):* Venta $100 + ITBMS $7 -> **Débito a Cuentas por Cobrar $107**.
-* **Disminuye (CRÉDITO -):** Cuando el cliente te entrega un **ABONO** o cancela la deuda total.
-    * *Ejemplo:* El cliente te paga $50 -> **Crédito a Cuentas por Cobrar $50**.
+| País | Impuesto | Tasa (%) | Fórmula de Registro |
+| :--- | :--- | :--- | :--- |
+| **Panamá** | ITBMS | 7% | `Venta * 1.07` |
+| **Colombia** | IVA | 19% | `Venta * 1.19` |
+| **México** | IVA | 16% | `Venta * 1.16` |
+| **Chile** | IVA | 19% | `Venta * 1.19` |
+| **Costa Rica** | IVA | 13% | `Venta * 1.13` |
 
-## 3. Cruce con CAJA/BANCO
-> **⚠️ REGLA DE ORO:** Al recibir el abono, recuerda que la contrapartida es un **Débito a CAJA (1105)**. No puedes desaparecer la deuda sin que el dinero aparezca en algún lado.
+## 2. Diferencia en Cambio (Multimoneda)
+Si la venta se hace en **Dólares (USD)** pero la contabilidad es en moneda local (ej. Pesos):
+* Se registra al tipo de cambio del día de la venta.
+* Al recibir el pago, si el dólar subió o bajó, la diferencia se ajusta contra la cuenta **4210 (Ingreso Financiero)** o **5305 (Gasto Financiero)**.
 
-## 4. Control de Auditoría (Base UP)
-Al final del mes, se debe generar un listado de quiénes deben y cuánto tiempo llevan sin pagar. Si el análisis dice que alguien no va a pagar, se aplica el **Principio de Prudencia**.
+## 3. Deterioro de Cartera (Prudencia Global)
+Siguiendo la **NIIF 9**, no esperamos a que el cliente "quiebre". Si el análisis de cuentas muestra que una factura tiene más de 90-120 días sin abono, debemos marcarla como "Dudosa Recuperación".
+
+---
+**Instrucción para la IA:** Al detectar un registro de venta a crédito, preguntar siempre: "¿En qué país se realiza la operación?" para aplicar el porcentaje de impuesto correcto al saldo de la cuenta por cobrar.
