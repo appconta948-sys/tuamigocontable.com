@@ -1,19 +1,25 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
+import bcrypt
+import os
+import psycopg2
+from psycopg2 import sql
+from dotenv import load_dotoreENV  # <-- CORRECCIÓN: debe ser load_dotenv
 from datetime import datetime
+
+# Cargar variables de entorno
+load_dotenv()
 
 # ============================================
 # 1. CONFIGURACIÓN Y PALETA DE COLORES
 # ============================================
 st.set_page_config(page_title="Tu Amigo Contable", layout="wide", initial_sidebar_state="collapsed")
 
-# Colores extraídos de las imágenes de referencia
-COLOR_PRIMARIO = "#345470"      # Azul petróleo (banner)
-COLOR_FONDO = "#e1e8ee"         # Gris azulado de fondo
+COLOR_PRIMARIO = "#345470"
+COLOR_FONDO = "#e1e8ee"
 COLOR_TEXTO = "#1a1a1a"
-COLOR_VERDE = "#92c83e"         # Verde para títulos y positivo
-COLOR_ROJO = "#d9534f"          # Rojo para negativo (añadido)
+COLOR_VERDE = "#92c83e"
+COLOR_ROJO = "#d9534f"
 
 st.markdown(f"""
 <style>
@@ -24,7 +30,6 @@ st.markdown(f"""
         background-color: {COLOR_FONDO};
     }}
 
-    /* Encabezado principal con logo */
     .main-header {{
         background-color: {COLOR_PRIMARIO};
         padding: 30px 20px;
@@ -51,7 +56,6 @@ st.markdown(f"""
         margin-top: 5px;
     }}
 
-    /* Tarjetas del dashboard */
     .card {{
         background: white;
         padding: 20px;
@@ -77,7 +81,6 @@ st.markdown(f"""
     .variacion.positiva {{ color: {COLOR_VERDE}; }}
     .variacion.negativa {{ color: {COLOR_ROJO}; }}
 
-    /* Tabla de movimientos */
     .movimientos-titulo {{
         font-size: 24px;
         font-weight: 700;
@@ -87,7 +90,6 @@ st.markdown(f"""
         padding-left: 15px;
     }}
 
-    /* Botones estilo global */
     .stButton>button {{
         background-color: {COLOR_PRIMARIO} !important;
         color: white !important;
@@ -95,43 +97,161 @@ st.markdown(f"""
         width: 100% !important;
         font-weight: 700 !important;
         border: none !important;
+        transition: 0.3s;
+    }}
+    .stButton>button:hover {{
+        background-color: #2a4055 !important;
     }}
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================
-# 2. NAVEGACIÓN Y LOGIN
+# 2. FUNCIONES DE BASE DE DATOS Y AUTENTICACIÓN
 # ============================================
-if 'login' not in st.session_state:
-    st.session_state.login = False
+def get_db_connection():
+    """Crea y devuelve una conexión a PostgreSQL."""
+    conn = psycopg2.connect(
+        host=os.getenv("DB_HOST"),
+        port=os.getenv("DB_PORT"),
+        dbname=os.getenv("DB_NAME"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD")
+    )
+    return conn
 
-if not st.session_state.login:
+def hash_password(password):
+    """Genera hash bcrypt de la contraseña."""
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+
+def check_password(password, hashed):
+    """Verifica la contraseña contra el hash."""
+    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+
+def authenticate(username, password):
+    """Busca usuario por email o teléfono y verifica contraseña."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT id, fullname, email, phone, password_hash FROM usuarios WHERE email = %s OR phone = %s",
+        (username, username)
+    )
+    user = cur.fetchone()
+    cur.close()
+    conn.close()
+    if user and check_password(password, user[4]):
+        return {"id": user[0], "fullname": user[1], "email": user[2], "phone": user[3]}
+    return None
+
+def register_user(fullname, email, phone, password):
+    """Registra un nuevo usuario en la base de datos."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    # Verificar duplicados
+    cur.execute("SELECT id FROM usuarios WHERE email = %s OR phone = %s", (email, phone))
+    if cur.fetchone():
+        cur.close()
+        conn.close()
+        return False, "El correo o teléfono ya está registrado."
+    # Insertar nuevo usuario
+    hashed = hash_password(password)
+    try:
+        cur.execute(
+            "INSERT INTO usuarios (fullname, email, phone, password_hash) VALUES (%s, %s, %s, %s)",
+            (fullname, email, phone, hashed)
+        )
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        return False, f"Error en el registro: {str(e)}"
+    finally:
+        cur.close()
+        conn.close()
+    return True, "Registro exitoso. Ya puedes iniciar sesión."
+
+# ============================================
+# 3. CONTROL DE SESIÓN
+# ============================================
+if 'authenticated' not in st.session_state:
+    st.session_state.authenticated = False
+    st.session_state.user = None
+    st.session_state.show_register = False
+
+# ============================================
+# 4. PANTALLAS DE LOGIN / REGISTRO
+# ============================================
+def show_login():
     st.markdown(f"<h1 style='text-align:center; color:{COLOR_PRIMARIO}'>Tu Amigo Contable</h1>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
-        st.info("Ingresa con tu cuenta de Google para gestionar tu contabilidad.")
-        if st.button("🔴 Entrar con Google"):
-            st.session_state.login = True
+        with st.form("login_form"):
+            st.subheader("Iniciar sesión")
+            username = st.text_input("Correo o teléfono")
+            password = st.text_input("Contraseña", type="password")
+            submitted = st.form_submit_button("Entrar")
+            if submitted:
+                if not username or not password:
+                    st.error("Por favor ingresa todos los campos.")
+                else:
+                    user = authenticate(username, password)
+                    if user:
+                        st.session_state.authenticated = True
+                        st.session_state.user = user
+                        st.success(f"¡Bienvenido {user['fullname']}!")
+                        st.rerun()
+                    else:
+                        st.error("Usuario o contraseña incorrectos.")
+        
+        st.markdown("---")
+        st.markdown("¿No tienes cuenta?")
+        if st.button("Registrarse aquí"):
+            st.session_state.show_register = True
             st.rerun()
-    st.stop()
+        
+        st.markdown("---")
+        st.info("O ingresa con tu cuenta de Google")
+        if st.button("🔴 Entrar con Google"):
+            st.warning("Funcionalidad en desarrollo. Usa el formulario.")
 
-# Menú de navegación
-menu = st.sidebar.selectbox("Ir a:", [
-    "🏠 Dashboard", 
-    "📈 Reportes y Facturas", 
-    "🏢 Nuestra Empresa", 
-    "💳 Suscripción (Global)", 
-    "📞 Contáctanos", 
-    "⚖️ Legal y Seguridad"
-])
+def show_register():
+    st.markdown(f"<h1 style='text-align:center; color:{COLOR_PRIMARIO}'>Tu Amigo Contable</h1>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        with st.form("register_form"):
+            st.subheader("Crear cuenta")
+            fullname = st.text_input("Nombre completo*")
+            email = st.text_input("Correo electrónico")
+            phone = st.text_input("Teléfono")
+            password = st.text_input("Contraseña*", type="password")
+            confirm = st.text_input("Confirmar contraseña*", type="password")
+            submitted = st.form_submit_button("Registrarse")
+            
+            if submitted:
+                if not fullname or not (email or phone) or not password or not confirm:
+                    st.error("Por favor completa todos los campos obligatorios (*).")
+                elif password != confirm:
+                    st.error("Las contraseñas no coinciden.")
+                elif len(password) < 6:
+                    st.error("La contraseña debe tener al menos 6 caracteres.")
+                else:
+                    success, msg = register_user(fullname, email, phone, password)
+                    if success:
+                        st.success(msg)
+                        st.session_state.show_register = False
+                        st.rerun()
+                    else:
+                        st.error(msg)
+        
+        st.markdown("---")
+        if st.button("Volver al inicio de sesión"):
+            st.session_state.show_register = False
+            st.rerun()
 
 # ============================================
-# 3. PÁGINAS DEL SISTEMA
+# 5. APLICACIÓN PRINCIPAL (DASHBOARD)
 # ============================================
-
-# --- DASHBOARD ---
-if menu == "🏠 Dashboard":
-    # Encabezado con logo
+def main_app():
+    # Encabezado
     st.markdown(f"""
     <div class='main-header'>
         <div class='small-logo'>igocontable.com</div>
@@ -140,115 +260,175 @@ if menu == "🏠 Dashboard":
     </div>
     """, unsafe_allow_html=True)
 
-    # Tarjetas de resumen (INGRESOS, EGRESOS, BALANCE)
-    col1, col2, col3 = st.columns(3)
-    with col1:
+    # Barra lateral
+    with st.sidebar:
+        st.markdown(f"### Hola, {st.session_state.user['fullname']}")
+        if st.button("Cerrar sesión"):
+            st.session_state.authenticated = False
+            st.session_state.user = None
+            st.rerun()
+        st.markdown("---")
+        menu = st.selectbox("Ir a:", [
+            "🏠 Dashboard",
+            "🏢 Nuestra Empresa",
+            "📞 Contáctanos",
+            "💳 Suscripción (Global)",
+            "⚖️ Legal y Seguridad"
+        ])
+
+    # Contenido según menú
+    if menu == "🏠 Dashboard":
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.markdown("""
+            <div class='card'>
+                <h2>Balance Actual</h2>
+                <div class='valor'>$470.00</div>
+                <div class='variacion positiva'>+2.5%</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with col2:
+            st.markdown("""
+            <div class='card'>
+                <h2>Consumo del Mes</h2>
+                <div class='valor'>$4,980.00</div>
+                <div class='variacion negativa'>-5%</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with col3:
+            st.markdown("""
+            <div class='card'>
+                <h2>Reportes</h2>
+                <div class='valor'>12</div>
+                <div class='variacion positiva'>Listos</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with col4:
+            st.markdown("""
+            <div class='card'>
+                <h2>Recomendaciones IA</h2>
+                <div class='valor'>5</div>
+                <div class='variacion positiva'>Tips</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("<div class='movimientos-titulo'>📝 Registro Diario</div>", unsafe_allow_html=True)
+        df_registro = pd.DataFrame({
+            "Fecha": ["2026-03-18", "2026-03-19", "2026-03-20"],
+            "Detalle": ["Pago Nómina", "Venta Software", "Compra Insumos"],
+            "Monto": ["$500.00", "$1,200.00", "$300.00"]
+        })
+        st.table(df_registro)
+
+        col_b1, col_b2 = st.columns(2)
+        with col_b1:
+            st.button("📥 Descargar Balance (Excel)")
+        with col_b2:
+            st.button("📂 Exportar Plantilla Profesional")
+        st.caption("Las plantillas profesionales se encuentran en la carpeta 'tabla'.")
+
+    elif menu == "🏢 Nuestra Empresa":
+        st.header("Acerca de Tu Amigo Contable")
         st.markdown(f"""
-        <div class='card'>
-            <h2>INGRESOS</h2>
-            <div class='valor'>$1,500,000</div>
-            <div class='variacion positiva'>+12%</div>
+        <div style="background-color: white; padding: 20px; border-radius: 15px;">
+            <h3 style="color:{COLOR_PRIMARIO};">Misión</h3>
+            <p>Facilitar la contabilidad de cada hogar y empresa mediante herramientas inteligentes y accesibles.</p>
+            <h3 style="color:{COLOR_PRIMARIO};">Visión</h3>
+            <p>Ser el líder global en asistencia contable por IA, reconocido por nuestra seguridad y transparencia.</p>
+            <h3 style="color:{COLOR_PRIMARIO};">Objetivos</h3>
+            <ul>
+                <li>Ofrecer una plataforma intuitiva que ahorre tiempo a nuestros usuarios.</li>
+                <li>Garantizar la seguridad de la información financiera.</li>
+                <li>Expandirnos a nuevos mercados con soporte multi-moneda.</li>
+            </ul>
         </div>
         """, unsafe_allow_html=True)
-    with col2:
+
+    elif menu == "📞 Contáctanos":
+        st.header("📍 Contáctanos")
         st.markdown(f"""
-        <div class='card'>
-            <h2>EGRESOS</h2>
-            <div class='valor'>$0</div>
-            <div class='variacion negativa'>-5%</div>
+        <div style="background-color: white; padding: 20px; border-radius: 15px;">
+            <p><strong>Dirección:</strong> Cedritos, Bogotá, Colombia</p>
+            <p><strong>Email:</strong> soporte@tuamigocontable.com</p>
+            <p><strong>Teléfono:</strong> +57 601 123 4567</p>
         </div>
         """, unsafe_allow_html=True)
-    with col3:
-        st.markdown(f"""
-        <div class='card'>
-            <h2>BALANCE</h2>
-            <div class='valor'>$1,500,000</div>
-            <div class='variacion positiva'>Positivo</div>
+        df_ubicacion = pd.DataFrame({'lat': [4.7228], 'lon': [-74.0450]})
+        st.map(df_ubicacion)
+
+    elif menu == "💳 Suscripción (Global)":
+        st.header("💳 Planes de Suscripción")
+        st.success("🎁 7 días de prueba GRATIS habilitados para nuevos usuarios.")
+        st.markdown("Pagos en USD que se convierten automáticamente a tu moneda local al procesar (como en SHEIN).")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.markdown("""
+            <div class='card'>
+                <h3>Mensual</h3>
+                <p class='valor'>$10 USD</p>
+                <p>Facturación mensual</p>
+            </div>
+            """, unsafe_allow_html=True)
+            st.button("Suscribirse Mensual", key="mensual")
+        with col2:
+            st.markdown("""
+            <div class='card'>
+                <h3>Trimestral</h3>
+                <p class='valor'>$25 USD</p>
+                <p>Ahorra 17%</p>
+            </div>
+            """, unsafe_allow_html=True)
+            st.button("Suscribirse Trimestral", key="trimestral")
+        with col3:
+            st.markdown("""
+            <div class='card'>
+                <h3>Anual</h3>
+                <p class='valor'>$99 USD</p>
+                <p>Ahorra 18%</p>
+            </div>
+            """, unsafe_allow_html=True)
+            st.button("Suscribirse Anual", key="anual")
+        st.caption("💳 Métodos de pago: Tarjeta de crédito, débito, PayPal y transferencias locales.")
+
+    elif menu == "⚖️ Legal y Seguridad":
+        st.header("🔐 Seguridad y Legalidad")
+        st.warning("Sistema protegido con **Seguro Antihacker 24/7** que garantiza la integridad de tus datos.")
+        st.markdown("© 2026 Tu Amigo Contable - Todos los derechos reservados.")
+        with st.expander("📜 Términos y Condiciones"):
+            st.write("""
+            **1. Aceptación de los términos**  
+            Al acceder y usar esta aplicación, aceptas cumplir con estos términos y condiciones.  
+            **2. Uso del servicio**  
+            El usuario es responsable de la veracidad de la información ingresada.  
+            **3. Modificaciones**  
+            Nos reservamos el derecho de actualizar los términos en cualquier momento.
+            """)
+        with st.expander("🔏 Política de Privacidad"):
+            st.write("""
+            **Recopilación de datos**  
+            Recopilamos la información necesaria para brindar el servicio contable.  
+            **Protección**  
+            Todos los datos se almacenan de forma cifrada y no se comparten con terceros sin consentimiento.  
+            **Cookies**  
+            Utilizamos cookies para mejorar la experiencia de navegación.
+            """)
+
+    # Botón flotante IA
+    st.markdown(f"""
+        <div style="position: fixed; bottom: 20px; right: 20px; z-index: 100;">
+            <button style="border-radius: 50%; width: 60px; height: 60px; background-color: {COLOR_PRIMARIO}; color: white; border: none; font-size: 30px; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.3);">
+                🤖
+            </button>
         </div>
-        """, unsafe_allow_html=True)
-
-    # Título de la tabla
-    st.markdown("<div class='movimientos-titulo'>ÚLTIMOS MOVIMIENTOS</div>", unsafe_allow_html=True)
-
-    # Tabla con los movimientos exactos de la imagen
-    movimientos = pd.DataFrame({
-        "Fecha": ["2024-03-15", "2024-03-15", "2024-03-15", "2024-03-20", "2024-03-20"],
-        "Comprobante": ["FV-001", "FV-001", "FV-001", "FV-002", "FV-002"],
-        "Cuenta": ["CLIENTES", "VENTAS", "IMPUESTOS POR PAGAR", "CAJA", "VENTAS"],
-        "Detalle": ["Cliente", "Ventas", "IVA", "Efectivo", "Ventas"],
-        "Débito": ["$1,190,000", "-", "-", "$500,000", "-"],
-        "Crédito": ["-", "$1,000,000", "$190,000", "-", "$500,000"],
-        "Tercero": ["Cliente A", "Cliente A", "Cliente A", "Cliente B", "Cliente B"]
-    })
-    st.table(movimientos)
-
-    # Gráfico de crecimiento de usuarios (segunda imagen)
-    st.markdown("<div class='movimientos-titulo'>CRECIMIENTO DE USUARIOS</div>", unsafe_allow_html=True)
-    
-    # Datos de la segunda imagen: Mes 2, Mes 6, Año 1 (12 meses)
-    data_usuarios = pd.DataFrame({
-        "Periodo": ["Mes 2", "Mes 6", "Año 1 (12)"],
-        "Usuarios": [50, 500, 1000]
-    })
-    
-    # Mostrar como gráfico de barras
-    st.bar_chart(data_usuarios.set_index("Periodo"))
-    
-    # Opcional: mostrar los números en texto
-    col_a, col_b, col_c = st.columns(3)
-    with col_a: st.metric("Mes 2", "50 Usuarios")
-    with col_b: st.metric("Mes 6", "500 Usuarios")
-    with col_c: st.metric("Año 1", "1000 Usuarios")
-
-# --- OTRAS PÁGINAS (sin cambios importantes) ---
-elif menu == "📈 Reportes y Facturas":
-    st.header("📄 Gestión de Documentos")
-    st.write("Genera facturas profesionales y descarga plantillas desde tu carpeta 'tabla'.")
-    st.button("📥 Descargar Balance (Excel)")
-    st.button("📂 Exportar Plantilla Profesional")
-
-elif menu == "🏢 Nuestra Empresa":
-    st.header("Acerca de Tu Amigo Contable")
-    st.write("**Misión:** Facilitar la contabilidad de cada hogar y empresa.")
-    st.write("**Visión:** Ser el líder global en asistencia contable por IA.")
-    st.write("**Objetivos:** Seguridad, Rapidez y Transparencia.")
-
-elif menu == "💳 Suscripción (Global)":
-    st.header("💳 Planes y Pagos")
-    st.success("7 días de prueba GRATIS habilitados")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown("<div class='card'><h3>Mensual</h3><p>$10 USD</p></div>", unsafe_allow_html=True)
-        st.button("Suscribirse Mensual")
-    with col2:
-        st.markdown("<div class='card'><h3>Trimestral</h3><p>$25 USD</p></div>", unsafe_allow_html=True)
-        st.button("Suscribirse Trimestral")
-    with col3:
-        st.markdown("<div class='card'><h3>Anual</h3><p>$99 USD</p></div>", unsafe_allow_html=True)
-        st.button("Suscribirse Anual")
-    st.caption("Los pagos se convierten automáticamente a tu moneda local al procesar.")
-
-elif menu == "📞 Contáctanos":
-    st.header("📍 Ubicación y Contacto")
-    st.write("Cedritos, Bogotá, Colombia")
-    st.map(pd.DataFrame({'lat': [4.7228], 'lon': [-74.0450]}))
-
-elif menu == "⚖️ Legal y Seguridad":
-    st.header("🔐 Seguridad y Legalidad")
-    st.warning("Sistema protegido con Seguro Antihacker 24/7")
-    st.write("© 2026 Tu Amigo Contable - Copy Write")
-    with st.expander("Términos y Condiciones"):
-        st.write("Detalles del servicio...")
-    with st.expander("Política de Privacidad"):
-        st.write("Tus datos están seguros...")
+    """, unsafe_allow_html=True)
 
 # ============================================
-# 4. BOTÓN FLOTANTE IA
+# 6. RUTA PRINCIPAL
 # ============================================
-st.markdown(f"""
-    <div style="position: fixed; bottom: 20px; right: 20px; z-index: 100;">
-        <button style="border-radius: 50%; width: 60px; height: 60px; background-color: {COLOR_PRIMARIO}; color: white; border: none; font-size: 30px; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.3);">
-            🤖
-        </button>
-    </div>
-""", unsafe_allow_html=True)
+if not st.session_state.authenticated:
+    if st.session_state.show_register:
+        show_register()
+    else:
+        show_login()
+else:
+    main_app()
