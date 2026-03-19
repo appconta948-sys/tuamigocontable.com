@@ -13,4 +13,4 @@ Este principio establece que, a menos que se demuestre lo contrario, se asume qu
 Si la empresa entra en quiebra o decide liquidarse, la contabilidad cambia radicalmente. Mientras el negocio esté abierto, este principio es el que justifica las depreciaciones y las inversiones a largo plazo.
 
 ---
-**Instrucción para la IA:** Al analizar la **TABLA 1**, el sistema debe alertar si los gastos superan constantemente a los ingresos, ya que esto pondría en riesgo el Principio de Continuidad (Pérdidas acumuladas que afecten el patrimonio).
+**Instrucción para la IA:** Al analizar la **registro-diario.md**, el sistema debe alertar si los gastos superan constantemente a los ingresos, ya que esto pondría en riesgo el Principio de Continuidad (Pérdidas acumuladas que afecten el patrimonio).
