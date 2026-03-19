@@ -1,24 +1,36 @@
 # ÁREAS DE LA CONTABILIDAD
 
-## 3. Contabilidad Impositiva (Fiscal / Tributaria)
+## 3. Contabilidad Impositiva (Fiscal / Tributaria) - Alcance Latinoamérica
 
-La **Contabilidad Impositiva** es el área especializada en el cumplimiento de las obligaciones sustanciales y formales relacionadas con los tributos. Se encarga de la gestión de los aspectos fiscales y el cálculo de impuestos, tanto a nivel Nacional como Local (Municipal).
+La **Contabilidad Impositiva** se encarga de gestionar el cumplimiento de las obligaciones tributarias ante las autoridades fiscales nacionales y locales. En el contexto latinoamericano, el sistema debe adaptarse a las diferentes nomenclaturas manteniendo el rigor legal.
 
-### Clasificación de Impuestos y Tributos:
+### Clasificación de Tributos en la Región:
 
-En cumplimiento de la normativa fiscal vigente, el sistema debe registrar y controlar:
+#### A. Impuestos sobre el Valor Agregado (Consumo)
+Dependiendo del país, este impuesto de transferencia de bienes y servicios se registra como:
+* **IVA:** (Colombia, México, Chile, Argentina, España).
+* **ITBMS:** (Panamá - Impuesto de Transferencia de Bienes Muebles y Servicios).
+* **IGV:** (Perú - Impuesto General a las Ventas).
 
-* **Impuestos Nacionales:**
-    * **Impuesto sobre la Renta:** Gravamen sobre las utilidades netas del ejercicio.
-    * **IVA / ITBMS:** Impuestos a la transferencia de bienes muebles y prestación de servicios.
-    * **Impuesto de Dividendos:** Retenciones sobre la distribución de utilidades.
-    * **Tasa Única:** Tributos anuales de mantenimiento de personería jurídica.
-* **Impuestos Locales / Municipales:**
-    * **Licencia Comercial / Avisos de Operación:** Impuestos por la actividad económica en el municipio.
-    * **Impuestos Prediales o de Inmuebles:** Según la ubicación del negocio.
+#### B. Impuestos sobre la Renta y Utilidades
+* **Impuesto a la Renta (ISR / IR):** Gravamen anual sobre las ganancias netas de la empresa.
+* **Impuesto de Dividendos:** Retención sobre las utilidades distribuidas a los socios o accionistas.
 
-### Responsabilidad Profesional:
-La contabilidad fiscal no solo registra, sino que garantiza que la entidad cumpla con los plazos de presentación y pago para evitar sanciones, multas o intereses moratorios.
+#### C. Tasas y Contribuciones Locales (Municipales)
+* **Patente Municipal / Comercial:** (Chile, Ecuador).
+* **ICA (Industria y Comercio):** (Colombia).
+* **Aviso de Operación / Tasa Única:** (Panamá).
+* **Ingresos Brutos:** (Argentina).
+
+#### D. Otras Obligaciones Fiscales Regionales
+* **Retenciones en la Fuente:** Anticipos del impuesto que se descuentan en pagos a proveedores.
+* **Gravámenes a Movimientos Financieros:** (Ej: 4x1000 en Colombia, Impuesto al Cheque en Argentina).
+
+### Marco Legal y Ético:
+Cada registro debe cumplir con la **Ley del Contador Público** de cada país de habla hispana, asegurando que la información reportada sea veraz y oportuna para evitar:
+1. Sanciones por extemporaneidad (presentar tarde).
+2. Multas por error en la base gravable.
+3. Responsabilidad solidaria del contador y el representante legal.
 
 ---
-**Nota para la IA:** El sistema debe emitir alertas preventivas sobre las fechas de vencimiento de estos impuestos según el calendario tributario del país configurado.
+**Instrucción para la IA:** Al procesar facturas o ingresos, identificar el país de origen para aplicar la tasa impositiva correspondiente (ej. 19% en Colombia, 16% en México, 7% en Panamá, 18% en Perú).
