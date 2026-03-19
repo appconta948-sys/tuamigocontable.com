@@ -1,4 +1,4 @@
-# LIBRO MAYOR DE CUENTAS POR PAGAR (TABLA 23)
+# LIBRO MAYOR DE CUENTAS POR PAGAR
 **Proveedor:** _________________  
 **Dirección:** _______________ **Teléfono:** _______________
 
