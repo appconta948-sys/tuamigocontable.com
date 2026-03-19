@@ -1,4 +1,6 @@
 # BALANCE GENERAL 
-| BALANCE GENERAL|
+
+| BALANCE GENERAL |
+
 | :--- | :--- | :--- | 
 
