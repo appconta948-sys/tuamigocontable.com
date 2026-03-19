@@ -1,6 +1,6 @@
 # PRINCIPIO DE VALUACIÓN O COSTO HISTÓRICO + IMPUESTOS LOCALES
 
-El registro en la **TABLA 1** debe ajustarse a la normativa fiscal del país de operación. El **Costo del Activo** se registra por su valor de adquisición, y el impuesto se separa según la tasa vigente.
+El registro en la **registro-diario.md** debe ajustarse a la normativa fiscal del país de operación. El **Costo del Activo** se registra por su valor de adquisición, y el impuesto se separa según la tasa vigente.
 
 ## 1. Matriz de Tasas de Impuesto (IVA / ITBMS / IGV)
 
@@ -16,7 +16,7 @@ Para el cálculo automático en las plantillas, se aplicarán las siguientes tas
 | **Perú** | IGV | 18% |
 | **Uruguay** | IVA | 22% |
 
-## 2. Aplicación en [TABLA 1] - REGISTRO DIARIO (Ejemplo con IVA 19%)
+## 2. Aplicación en [registro-diario.md] - REGISTRO DIARIO (Ejemplo con IVA 19%)
 
 Si compramos una planta en **Colombia o Chile (19%)**:
 
@@ -26,7 +26,7 @@ Si compramos una planta en **Colombia o Chile (19%)**:
 | 003 | `240805` | **IVA Descontable (19%)** | **2.185** | |
 | 003 | `2335XX` | Total Acreedores | | **13.685** |
 
-## 3. Aplicación en [TABLA 1] - REGISTRO DIARIO (Ejemplo con ITBMS 7%)
+## 3. Aplicación en [registro-diario.md] - REGISTRO DIARIO (Ejemplo con ITBMS 7%)
 
 Si la misma compra se hace en **Panamá (7%)**:
 
@@ -37,5 +37,5 @@ Si la misma compra se hace en **Panamá (7%)**:
 | 003 | `2335XX` | Total Acreedores | | **12.305** |
 
 ---
-**Instrucción para la IA:** Antes de validar el asiento en la **TABLA 1**, el sistema debe verificar el país configurado y calcular el impuesto automáticamente sobre la base del costo (Planta + Instalación).
+**Instrucción para la IA:** Antes de validar el asiento en la **registro-diario.md**, el sistema debe verificar el país configurado y calcular el impuesto automáticamente sobre la base del costo (Planta + Instalación).
 
