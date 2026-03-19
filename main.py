@@ -1,17 +1,19 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 from datetime import datetime
 
 # ============================================
-# 1. CONFIGURACIÓN Y PALETA DE COLORES (TU IMAGEN)
+# 1. CONFIGURACIÓN Y PALETA DE COLORES
 # ============================================
 st.set_page_config(page_title="Tu Amigo Contable", layout="wide", initial_sidebar_state="collapsed")
 
-# Colores extraídos de tu imagen de referencia
-COLOR_PRIMARIO = "#345470"  # Azul petróleo del banner
-COLOR_FONDO = "#e1e8ee"    # Gris azulado de fondo
+# Colores extraídos de las imágenes de referencia
+COLOR_PRIMARIO = "#345470"      # Azul petróleo (banner)
+COLOR_FONDO = "#e1e8ee"         # Gris azulado de fondo
 COLOR_TEXTO = "#1a1a1a"
-COLOR_VERDE = "#92c83e"    # Verde de los títulos en el banner
+COLOR_VERDE = "#92c83e"         # Verde para títulos y positivo
+COLOR_ROJO = "#d9534f"          # Rojo para negativo (añadido)
 
 st.markdown(f"""
 <style>
@@ -22,18 +24,34 @@ st.markdown(f"""
         background-color: {COLOR_FONDO};
     }}
 
-    /* Estilo del Header Principal */
+    /* Encabezado principal con logo */
     .main-header {{
         background-color: {COLOR_PRIMARIO};
-        padding: 40px 20px;
-        color: {COLOR_VERDE};
+        padding: 30px 20px;
+        color: white;
         text-align: center;
         border-radius: 0 0 20px 20px;
         margin-bottom: 30px;
     }}
-    .main-header h1 {{ font-size: 35px; font-weight: 700; color: {COLOR_VERDE} !important; }}
+    .main-header .small-logo {{
+        color: {COLOR_VERDE};
+        font-size: 16px;
+        letter-spacing: 2px;
+        margin-bottom: 5px;
+    }}
+    .main-header .big-logo {{
+        color: {COLOR_VERDE};
+        font-size: 36px;
+        font-weight: 700;
+        line-height: 1.2;
+    }}
+    .main-header .tagline {{
+        color: white;
+        font-size: 18px;
+        margin-top: 5px;
+    }}
 
-    /* Tarjetas del Dashboard */
+    /* Tarjetas del dashboard */
     .card {{
         background: white;
         padding: 20px;
@@ -42,10 +60,34 @@ st.markdown(f"""
         text-align: center;
         margin-bottom: 15px;
     }}
-    .card h2 {{ color: {COLOR_PRIMARIO}; font-size: 18px; }}
-    .card p {{ font-size: 24px; font-weight: 700; color: {COLOR_TEXTO}; }}
+    .card h2 {{
+        color: {COLOR_PRIMARIO};
+        font-size: 18px;
+        margin-bottom: 5px;
+    }}
+    .card .valor {{
+        font-size: 32px;
+        font-weight: 700;
+        color: {COLOR_TEXTO};
+    }}
+    .card .variacion {{
+        font-size: 16px;
+        font-weight: 500;
+    }}
+    .variacion.positiva {{ color: {COLOR_VERDE}; }}
+    .variacion.negativa {{ color: {COLOR_ROJO}; }}
 
-    /* Botones estilo SHEIN / Global */
+    /* Tabla de movimientos */
+    .movimientos-titulo {{
+        font-size: 24px;
+        font-weight: 700;
+        color: {COLOR_PRIMARIO};
+        margin: 30px 0 15px 0;
+        border-left: 5px solid {COLOR_VERDE};
+        padding-left: 15px;
+    }}
+
+    /* Botones estilo global */
     .stButton>button {{
         background-color: {COLOR_PRIMARIO} !important;
         color: white !important;
@@ -73,7 +115,7 @@ if not st.session_state.login:
             st.rerun()
     st.stop()
 
-# Menú de Navegación
+# Menú de navegación
 menu = st.sidebar.selectbox("Ir a:", [
     "🏠 Dashboard", 
     "📈 Reportes y Facturas", 
@@ -89,40 +131,91 @@ menu = st.sidebar.selectbox("Ir a:", [
 
 # --- DASHBOARD ---
 if menu == "🏠 Dashboard":
-    st.markdown(f"<div class='main-header'><h1>MIRA TU BALANCE AQUÍ</h1><p style='color:white'>Tu resumen financiero inteligente</p></div>", unsafe_allow_html=True)
-    
-    c1, c2, c3, c4 = st.columns(4)
-    with c1: st.markdown("<div class='card'><h2>Balance Actual</h2><p>$470.00</p></div>", unsafe_allow_html=True)
-    with c2: st.markdown("<div class='card'><h2>Consumo Mes</h2><p>$4,980.00</p></div>", unsafe_allow_html=True)
-    with c3: st.markdown("<div class='card'><h2>Reportes</h2><p>12 Listos</p></div>", unsafe_allow_html=True)
-    with c4: st.markdown("<div class='card'><h2>IA Tips</h2><p>5 Pendientes</p></div>", unsafe_allow_html=True)
-    
-    st.subheader("📝 Registro Diario")
-    st.table(pd.DataFrame({
-        "Fecha": ["2026-03-18", "2026-03-19"],
-        "Detalle": ["Pago Nómina", "Venta Software"],
-        "Monto": ["$500.00", "$1.200.00"]
-    }))
+    # Encabezado con logo
+    st.markdown(f"""
+    <div class='main-header'>
+        <div class='small-logo'>igocontable.com</div>
+        <div class='big-logo'>tuamigocontable.com</div>
+        <div class='tagline'>Tu asistente contable inteligente</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-# --- REPORTES Y FACTURAS ---
+    # Tarjetas de resumen (INGRESOS, EGRESOS, BALANCE)
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(f"""
+        <div class='card'>
+            <h2>INGRESOS</h2>
+            <div class='valor'>$1,500,000</div>
+            <div class='variacion positiva'>+12%</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"""
+        <div class='card'>
+            <h2>EGRESOS</h2>
+            <div class='valor'>$0</div>
+            <div class='variacion negativa'>-5%</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col3:
+        st.markdown(f"""
+        <div class='card'>
+            <h2>BALANCE</h2>
+            <div class='valor'>$1,500,000</div>
+            <div class='variacion positiva'>Positivo</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Título de la tabla
+    st.markdown("<div class='movimientos-titulo'>ÚLTIMOS MOVIMIENTOS</div>", unsafe_allow_html=True)
+
+    # Tabla con los movimientos exactos de la imagen
+    movimientos = pd.DataFrame({
+        "Fecha": ["2024-03-15", "2024-03-15", "2024-03-15", "2024-03-20", "2024-03-20"],
+        "Comprobante": ["FV-001", "FV-001", "FV-001", "FV-002", "FV-002"],
+        "Cuenta": ["CLIENTES", "VENTAS", "IMPUESTOS POR PAGAR", "CAJA", "VENTAS"],
+        "Detalle": ["Cliente", "Ventas", "IVA", "Efectivo", "Ventas"],
+        "Débito": ["$1,190,000", "-", "-", "$500,000", "-"],
+        "Crédito": ["-", "$1,000,000", "$190,000", "-", "$500,000"],
+        "Tercero": ["Cliente A", "Cliente A", "Cliente A", "Cliente B", "Cliente B"]
+    })
+    st.table(movimientos)
+
+    # Gráfico de crecimiento de usuarios (segunda imagen)
+    st.markdown("<div class='movimientos-titulo'>CRECIMIENTO DE USUARIOS</div>", unsafe_allow_html=True)
+    
+    # Datos de la segunda imagen: Mes 2, Mes 6, Año 1 (12 meses)
+    data_usuarios = pd.DataFrame({
+        "Periodo": ["Mes 2", "Mes 6", "Año 1 (12)"],
+        "Usuarios": [50, 500, 1000]
+    })
+    
+    # Mostrar como gráfico de barras
+    st.bar_chart(data_usuarios.set_index("Periodo"))
+    
+    # Opcional: mostrar los números en texto
+    col_a, col_b, col_c = st.columns(3)
+    with col_a: st.metric("Mes 2", "50 Usuarios")
+    with col_b: st.metric("Mes 6", "500 Usuarios")
+    with col_c: st.metric("Año 1", "1000 Usuarios")
+
+# --- OTRAS PÁGINAS (sin cambios importantes) ---
 elif menu == "📈 Reportes y Facturas":
     st.header("📄 Gestión de Documentos")
     st.write("Genera facturas profesionales y descarga plantillas desde tu carpeta 'tabla'.")
     st.button("📥 Descargar Balance (Excel)")
     st.button("📂 Exportar Plantilla Profesional")
 
-# --- NUESTRA EMPRESA ---
 elif menu == "🏢 Nuestra Empresa":
-    st.header("About Tu Amigo Contable")
+    st.header("Acerca de Tu Amigo Contable")
     st.write("**Misión:** Facilitar la contabilidad de cada hogar y empresa.")
     st.write("**Visión:** Ser el líder global en asistencia contable por IA.")
     st.write("**Objetivos:** Seguridad, Rapidez y Transparencia.")
 
-# --- SUSCRIPCIÓN ---
 elif menu == "💳 Suscripción (Global)":
     st.header("💳 Planes y Pagos")
     st.success("7 días de prueba GRATIS habilitados")
-    
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown("<div class='card'><h3>Mensual</h3><p>$10 USD</p></div>", unsafe_allow_html=True)
@@ -135,13 +228,11 @@ elif menu == "💳 Suscripción (Global)":
         st.button("Suscribirse Anual")
     st.caption("Los pagos se convierten automáticamente a tu moneda local al procesar.")
 
-# --- CONTACTO ---
 elif menu == "📞 Contáctanos":
     st.header("📍 Ubicación y Contacto")
     st.write("Cedritos, Bogotá, Colombia")
     st.map(pd.DataFrame({'lat': [4.7228], 'lon': [-74.0450]}))
 
-# --- LEGAL ---
 elif menu == "⚖️ Legal y Seguridad":
     st.header("🔐 Seguridad y Legalidad")
     st.warning("Sistema protegido con Seguro Antihacker 24/7")
