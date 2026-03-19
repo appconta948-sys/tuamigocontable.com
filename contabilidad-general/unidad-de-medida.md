@@ -6,11 +6,11 @@ Este principio es el eje transversal de todo el sistema. **Ningún reporte, tabl
 
 El sistema de GitHub debe incluir el campo de **Moneda Local** en las siguientes estructuras obligatorias:
 
-### [TABLA 1] - REGISTRO DIARIO
+### [registro-diario.md] - REGISTRO DIARIO
 * **Regla:** Todos los asientos (Débitos y Créditos) se registran en la moneda funcional del país de operación.
 * **Ejemplo:** Si el ente es de **Colombia**, toda la Tabla 1 se llena en **COP**.
 
-### [TABLA 2] - LIBRO MAYOR (Saldos)
+### [libro-mayor.md] - LIBRO MAYOR (Saldos)
 * **Regla:** Los totales acumulados por cuenta del PUC deben reflejar la moneda local para permitir la consolidación.
 
 ### [PLANTILLAS DE ESTADOS FINANCIEROS]
