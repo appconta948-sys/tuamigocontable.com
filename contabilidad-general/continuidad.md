@@ -5,7 +5,7 @@ Este principio establece que, a menos que se demuestre lo contrario, se asume qu
 ## Aplicación bajo Normativa Regional:
 
 1.  **Operación Continua:** Los activos no se valoran por lo que valdrían si vendiéramos todo hoy (precio de liquidación), sino por su capacidad de generar ingresos en el tiempo.
-2.  **Moneda Local:** Todos los registros en la **TABLA 1** deben realizarse en la moneda legal del país (Ej: Pesos Colombianos, Pesos Mexicanos, Balboas/Dólares, Soles). 
+2.  **Moneda Local:** Todos los registros en la **registro-diario.md** deben realizarse en la moneda legal del país (Ej: Pesos Colombianos, Pesos Mexicanos, Balboas/Dólares, Soles). 
     * *Nota:* Si hay transacciones en moneda extranjera, se deben convertir al tipo de cambio del día.
 3.  **Plan de Mercado y Leyes Locales:** La contabilidad debe reflejar la estrategia comercial y cumplir con los marcos regulatorios (NIIF, leyes mercantiles y tributarias) que aseguran la permanencia del ente en el mercado.
 
