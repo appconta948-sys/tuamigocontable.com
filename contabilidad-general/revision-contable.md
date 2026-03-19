@@ -13,5 +13,3 @@ Al recibir documentos como facturas, recibos o cheques, se debe verificar:
 3. **Identificación de la Entidad:** Que el nombre de la empresa y el NIT/RUC sean los correctos.
 4. **Requisitos Fiscales:** Asegurarse de que la factura de compra o venta cumpla con todas las normas exigidas por la autoridad tributaria (fechas, números de resolución, etc.).
 
----
-> **Ejemplo Práctico:** Si "el lento" recibe una factura de un proveedor, antes de escribir nada en GitHub, debe puntear que el 7% o 19% del impuesto esté bien calculado. Si la matemática falla, el registro contable fallará.
