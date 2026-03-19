@@ -78,4 +78,40 @@ Este repositorio contiene la estructura financiera y el registro diario de opera
 | 3101 [Nombre] Capital | | $100.00 |
 *Glosa: Registro de aporte inicial para constitución de empresa.*
 
+# 🏛️ SISTEMA DE GESTIÓN CONTABLE ESTRATÉGICA
+> **Base Normativa:** Código de Comercio (Ley 5 de 1997) y Normas Internacionales de Contabilidad (NIC 1).
+
+Este repositorio centraliza la estructura lógica, legal y operativa del ciclo contable de la entidad. Diseñado para garantizar la transparencia, evitar sanciones fiscales y facilitar la toma de decisiones financieras.
+
+---
+
+## 📂 ESTRUCTURA DEL SISTEMA
+
+### 1. 📑 Libro de Registro de Contabilidad
+La columna vertebral legal de la empresa. Contiene los registros indispensables:
+* [Libro Diario](./libro-de-registro-de-contabilidad/libro-diario.md) - Registro cronológico y glosas.
+* [Libro Mayor](./libro-de-registro-de-contabilidad/libro-mayor.md) - Centralización por cuentas y saldos.
+* [Libro de Actas](./libro-de-registro-de-contabilidad/libro-de-registro-de-actas.md) - Acuerdos de socios y directivos.
+* [Registro de Acciones](./libro-de-registro-de-contabilidad/libro-de-registro-de-acciones.md) - Control de propiedad y capital.
+
+### 2. 📊 Tablas Contables (Auxiliares)
+Módulos de apoyo para el alto volumen de transacciones:
+* [Diarios Especiales](./tablas-contables/diarios-auxiliares-especiales.md) - Ventas, compras y caja.
+* [Mayores Auxiliares](./tablas-contables/mayores-auxiliares.md) - Clientes, proveedores y gastos.
+* [Diario Combinado](./tablas-contables/diario-combinado.md) - Control para profesionales y oficios.
+
+### 3. ⚖️ Régimen Fiscal y Control
+* [Guía de IVA / ITBMS](./fiscal/guia-iva-itbms-latam.md) - Tasas y retenciones por país.
+* [Multas y Sanciones](./libro-de-registro-de-contabilidad/regimen-sancionatorio-y-multas.md) - Prevención de riesgos fiscales.
+
+---
+
+## 📈 LÓGICA DEL CICLO CONTABLE
+```mermaid
+graph LR
+    A[Transacción] --> B[Libros Auxiliares]
+    B --> C[Libro Diario]
+    C --> D[Libro Mayor]
+    D --> E[Estados Financieros]
+
 
