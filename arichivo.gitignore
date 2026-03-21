@@ -1,0 +1,21 @@
+# Secrets y archivos de configuración
+.streamlit/secrets.toml
+.env
+*.key
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
