@@ -564,3 +564,15 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# main.py - Asegúrate de tener estas importaciones
+from asistente_ia import ContaAsistente
+from memoria import MemoriaAsistente
+from aprendizaje import SistemaAprendizaje
+from logica_contable import obtener_logica_contable
+
+# Inicializar todo
+conta = ContaAsistente()
+memoria = MemoriaAsistente()
+aprendizaje = SistemaAprendizaje()
+logica = obtener_logica_contable()
