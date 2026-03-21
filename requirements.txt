@@ -5,5 +5,4 @@ openpyxl
 xlsxwriter
 requests
 openai
-
-
+google-generativeai
