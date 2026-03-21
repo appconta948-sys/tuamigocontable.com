@@ -566,7 +566,7 @@ if __name__ == "__main__":
     main()
 
 # main.py - Asegúrate de tener estas importaciones
-from asistente_ia import ContaAsistente
+from asistente_ia.py import ContaAsistente
 from memoria import MemoriaAsistente
 from aprendizaje import SistemaAprendizaje
 from logica_contable import obtener_logica_contable
