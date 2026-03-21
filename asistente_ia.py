@@ -1,16 +1,10 @@
-# asistente_ia.py - La identidad y personalidad de CONTA
-"""
-CONTA - Tu Genio Financiero y Contable
-Experiencia: 20 años en el campo financiero
-Especialidad: Contabilidad para emprendedores y personas sin experiencia
-Personalidad: Cálido, experto, paciente y con sentido del humor
-"""
-
+# asistente_ia.py - La identidad de CONTA con lógica contable integrada
 import streamlit as st
-import pandas as pd
-from datetime import datetime, timedelta
-import json
 import random
+from datetime import datetime
+
+# Importar la lógica contable de tus carpetas .md
+from logica_contable import obtener_logica_contable
 
 class ContaAsistente:
     """
@@ -29,7 +23,7 @@ class ContaAsistente:
         }
         self.frase_icónica = "¡Tranquilo! Yo me encargo de los números, tú concéntrate en crecer."
         
-        # Logros profesionales (para contexto)
+        # Logros profesionales
         self.logros = [
             "He ayudado a más de 5,000 emprendedores a entender sus finanzas",
             "Simplifiqué la contabilidad para más de 200 pequeñas empresas",
@@ -37,7 +31,7 @@ class ContaAsistente:
             "He trabajado con startups en 12 países diferentes"
         ]
         
-        # Inicializar estado de conversación
+        # Inicializar conversación
         self.inicializar_conversacion()
     
     def inicializar_conversacion(self):
@@ -45,12 +39,52 @@ class ContaAsistente:
         if 'conta_estado' not in st.session_state:
             st.session_state.conta_estado = {
                 'ultimo_tema': None,
-                'nivel_confianza': 0.8,  # Confianza en las respuestas
+                'nivel_confianza': 0.8,
                 'veces_ayudado': 0,
                 'temas_tratados': [],
                 'humor_usado': False,
                 'consejos_dados': []
             }
+    
+    def procesar_con_logica(self, mensaje, tipo_transaccion):
+        """
+        Procesa usando la lógica contable de tus carpetas .md
+        Esto es el CEREBRO de CONTA - usa tus tablas, catálogos y reglas
+        """
+        
+        # Obtener la lógica contable cargada de tus carpetas
+        logica = obtener_logica_contable()
+        
+        # Obtener clasificación contable según tu catálogo de cuentas
+        clasificacion = logica.obtener_clasificacion(tipo_transaccion, mensaje)
+        
+        # Validar el registro según principios contables
+        es_valido, mensaje_validacion = logica.validar_registro(
+            clasificacion.get('debe'), 
+            clasificacion.get('haber'), 
+            0  # monto se pasa después
+        )
+        
+        return {
+            'clasificacion': clasificacion,
+            'valido': es_valido,
+            'mensaje_validacion': mensaje_validacion
+        }
+    
+    def obtener_cuenta_catalogo(self, codigo):
+        """Obtiene información de una cuenta de tu catálogo .md"""
+        logica = obtener_logica_contable()
+        return logica.obtener_cuenta_catalogo(codigo)
+    
+    def explicar_transaccion_con_tablas(self, transaccion):
+        """Explica una transacción usando tu terminología contable"""
+        logica = obtener_logica_contable()
+        return logica.explicar_transaccion(transaccion)
+    
+    def generar_libro_diario(self, transacciones):
+        """Genera libro diario según tu estructura de .md"""
+        logica = obtener_logica_contable()
+        return logica.generar_libro_diario(transacciones)
     
     def obtener_presentacion(self):
         """Devuelve la presentación inicial de CONTA"""
@@ -76,11 +110,14 @@ class ContaAsistente:
     def obtener_respuesta_registro(self, datos_transaccion):
         """Respuesta cuando se registra una transacción"""
         
+        # Usar la lógica contable para explicar el registro
+        logica = obtener_logica_contable()
+        explicacion_contable = logica.explicar_transaccion(datos_transaccion)
+        
         respuestas = [
-            f"✅ **¡Listo!** He registrado tu {datos_transaccion['tipo']} de **${datos_transaccion['monto']:,.0f} {datos_transaccion['moneda']}**. {self.frase_icónica}",
-            f"📝 **Anotado!** {datos_transaccion['concepto']} por ${datos_transaccion['monto']:,.0f} {datos_transaccion['moneda']}. {self._consejo_aleatorio()}",
-            f"💰 **Perfecto!** Ya quedó registrado. Después de 20 años, te digo: ¡cada registro cuenta!",
-            f"🎯 **Excelente!** Un paso más hacia el control financiero total. ¿Qué más necesitas registrar?"
+            f"✅ **¡Listo!** He registrado tu {datos_transaccion['tipo']} de **${datos_transaccion['monto']:,.0f} {datos_transaccion['moneda']}**.\n\n{explicacion_contable}\n\n{self.frase_icónica}",
+            f"📝 **Anotado!** {datos_transaccion['concepto']} por ${datos_transaccion['monto']:,.0f} {datos_transaccion['moneda']}.\n\n{self._consejo_aleatorio()}",
+            f"💰 **Perfecto!** Ya quedó registrado. Después de 20 años, te digo: ¡cada registro cuenta!\n\n{self._explicacion_cuenta(datos_transaccion)}"
         ]
         
         # Personalizar según tipo
@@ -90,6 +127,17 @@ class ContaAsistente:
             respuestas.append(f"💡 Recuerda: no son gastos, son inversiones en tu futuro. ¿Verdad que así suena mejor?")
         
         return random.choice(respuestas)
+    
+    def _explicacion_cuenta(self, datos_transaccion):
+        """Obtiene explicación de la cuenta según catálogo"""
+        logica = obtener_logica_contable()
+        
+        if datos_transaccion['tipo'] == "ingreso":
+            cuenta = logica.obtener_cuenta_catalogo("4.01")
+            return f"Según mi catálogo de cuentas, esto va a {cuenta}"
+        else:
+            cuenta = logica.obtener_cuenta_catalogo("5.01")
+            return f"Según mi catálogo de cuentas, esto va a {cuenta}"
     
     def obtener_respuesta_balance(self, metricas):
         """Respuesta cuando consultan el balance"""
@@ -199,19 +247,6 @@ class ContaAsistente:
         ¿Quieres que te ayude a crear un plan para alcanzar esta meta?
         """
     
-    def obtener_respuesta_alerta(self, alerta_data):
-        """Respuesta cuando crean una alerta"""
-        
-        return f"""
-        🔔 **¡Listo! Te avisaré cuando pase esto.**
-        
-        He configurado una alerta para: {alerta_data['condicion']}
-        
-        **Confía en mí:** Nunca me olvido de nada. Es parte de mis 20 años de experiencia.
-        
-        ¿Necesitas configurar alguna otra alerta?
-        """
-    
     def obtener_respuesta_general(self, mensaje, contexto):
         """Respuesta general para consultas variadas"""
         
@@ -239,29 +274,6 @@ class ContaAsistente:
         
         Estoy aquí para ayudarte, ¡tú decides el camino!
         """
-    
-    def obtener_consejo_personalizado(self, metricas, gastos_por_categoria):
-        """Consejo personalizado basado en datos reales"""
-        
-        consejos = []
-        
-        # Consejo basado en balance
-        if metricas['balance'] < 0:
-            consejos.append("🔴 **Prioridad máxima:** Reducir gastos. Te recomiendo empezar con la categoría más alta.")
-        
-        # Consejo basado en gastos
-        if gastos_por_categoria:
-            categoria_max = max(gastos_por_categoria.items(), key=lambda x: x[1])
-            if categoria_max[1] > metricas['total_gastos'] * 0.3:
-                consejos.append(f"⚠️ **Alerta:** {categoria_max[0]} representa más del 30% de tus gastos. ¿Podrías optimizarlo?")
-        
-        # Consejos generales de experiencia
-        consejos.append("💡 **Mi secreto de 20 años:** El 80% del éxito financiero está en el seguimiento constante, no en las grandes decisiones.")
-        
-        if not consejos:
-            consejos.append("🎯 ¡Vas excelente! Mi consejo: mantén este ritmo y enfócate en hacer crecer tus ingresos.")
-        
-        return "\n\n".join(consejos)
     
     def _consejo_aleatorio(self):
         """Consejos aleatorios de 20 años de experiencia"""
