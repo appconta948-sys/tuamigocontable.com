@@ -565,14 +565,25 @@ def main():
 if __name__ == "__main__":
     main()
 
-# main.py - Asegúrate de tener estas importaciones
-from asistente_ia.py import ContaAsistente
+# main.py - Inicio correcto
+import streamlit as st
+import pandas as pd
+from datetime import datetime
+import openai
+import json
+import re
+
+# ========== IMPORTS CORRECTOS ==========
+from asistente_ia import ContaAsistente      # ← atención: asistente (una s)
 from memoria import MemoriaAsistente
 from aprendizaje import SistemaAprendizaje
 from logica_contable import obtener_logica_contable
 
-# Inicializar todo
-conta = ContaAsistente()
-memoria = MemoriaAsistente()
-aprendizaje = SistemaAprendizaje()
-logica = obtener_logica_contable()
+# ========== CONFIGURACIÓN ==========
+st.set_page_config(
+    page_title="CONTA - Tu Amigo Contable",
+    page_icon="🎩",
+    layout="wide"
+)
+
+# ... resto del código ...
