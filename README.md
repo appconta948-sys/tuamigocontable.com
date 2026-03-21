@@ -125,3 +125,4 @@ graph LR
 **¿Qué te parece esta "fachada" para el proyecto?** Si te gusta, podemos empezar a pulir los detalles de los **Módulos Tecnológicos** que faltaban. 📊📉💾🚀
 
 
+
