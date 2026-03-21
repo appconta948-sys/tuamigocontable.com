@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import json
 import os
-import hashlib
 from datetime import datetime, timedelta
 from openai import OpenAI
 import plotly.graph_objects as go
@@ -12,16 +11,16 @@ import plotly.express as px
 # CONFIGURACIÓN Y ESTILOS
 # ============================================
 st.set_page_config(
-    page_title="Tu Amigo Contable",
-    page_icon="💰",
+    page_title="Conta - Tu Amigo Contable",
+    page_icon="🧔",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Colores
+# Colores de tu imagen
 COLORES = {
     "primario": "#345470",
-    "fondo": "#e1e8ee",
+    "fondo": "#e1e8ee", 
     "texto": "#1a1a1a",
     "verde": "#92c83e",
     "rojo": "#d9534f",
@@ -68,8 +67,8 @@ st.markdown(f"""
         padding-left: 1rem;
     }}
     
-    .ia-card {{
-        background: linear-gradient(135deg, {COLORES['verde']} 0%, #6aa84f 100%);
+    .conta-card {{
+        background: linear-gradient(135deg, {COLORES['primario']} 0%, #1e3a5f 100%);
         color: white;
         padding: 1.5rem;
         border-radius: 20px;
@@ -83,7 +82,7 @@ st.markdown(f"""
         margin-bottom: 0.5rem;
         text-align: right;
     }}
-    .chat-message-bot {{
+    .chat-message-conta {{
         background: #f0f7e8;
         padding: 1rem;
         border-radius: 15px;
@@ -103,6 +102,21 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ============================================
+# DICCIONARIO DE TRADUCCIÓN (lenguaje callejero → contabilidad)
+# ============================================
+DICCIONARIO = {
+    "me fiaron": {"cuenta": "2101", "nombre": "PROVEEDORES", "tipo": "CREDITO", "accion": "Aumenta Pasivo"},
+    "me debe": {"cuenta": "1205", "nombre": "CUENTAS POR COBRAR", "tipo": "DEBITO", "accion": "Aumenta Activo"},
+    "agarré de la caja": {"cuenta": "3105", "nombre": "RETIROS PERSONAL", "tipo": "DEBITO", "accion": "Aumenta Retiro"},
+    "soltó los que debía": {"cuenta": "1101", "nombre": "CAJA", "tipo": "DEBITO", "accion": "Entra Cash, Baja Deuda"},
+    "pagó el de la luz": {"cuenta": "6201", "nombre": "GASTO ELECTRICIDAD", "tipo": "DEBITO", "accion": "Aumenta Gasto"},
+    "me bajaron por feo": {"cuenta": "4105", "nombre": "DESCUENTO EN VENTAS", "tipo": "DEBITO", "accion": "Resta al Ingreso"},
+    "vendí": {"cuenta": "4135", "nombre": "VENTAS", "tipo": "CREDITO", "accion": "Aumenta Ingreso"},
+    "compré": {"cuenta": "1405", "nombre": "INVENTARIO", "tipo": "DEBITO", "accion": "Aumenta Activo"},
+    "le pagué al proveedor": {"cuenta": "2101", "nombre": "PROVEEDORES", "tipo": "DEBITO", "accion": "Disminuye Pasivo"}
+}
+
+# ============================================
 # CONFIGURACIÓN DE IA (OPENAI)
 # ============================================
 def configurar_openai():
@@ -112,7 +126,6 @@ def configurar_openai():
             api_key = st.secrets["OPENAI_API_KEY"]
         else:
             api_key = os.getenv("OPENAI_API_KEY")
-        
         if api_key:
             return OpenAI(api_key=api_key)
     except Exception as e:
@@ -120,47 +133,84 @@ def configurar_openai():
     return None
 
 # ============================================
-# CLASES CONTABLES
+# CLASE CONTA (Contador con 20 años de experiencia)
 # ============================================
 class Conta:
-    def __init__(self, usuario_id="default"):
-        self.usuario_id = usuario_id
-        self.pais = "Colombia"
-        self.moneda = "COP"
-        
-    def hablar_como_contador(self, mensaje):
-        """Responde como un contador amigable"""
-        return f"📊 Como contador con 20 años de experiencia, te explico: {mensaje}"
+    def __init__(self):
+        self.nombre = "Conta"
+        self.experiencia = "20 años cuadrando cajas en Latam"
+        self.mision = "Que 'el lento' no quiebre por no anotar los 'mandados'"
+        self.especialidad = "Contabilidad de Calle (Street Accounting)"
+    
+    def traducir(self, texto):
+        """Traduce lenguaje callejero a términos contables"""
+        texto_lower = texto.lower()
+        for clave, valor in DICCIONARIO.items():
+            if clave in texto_lower:
+                return valor
+        return None
+    
+    def hablar(self, mensaje):
+        """Responde como Conta, el contador de barrio"""
+        return f"🧔 **Conta (20 años de experiencia):** {mensaje}"
 
-class PUCInteligente:
+# ============================================
+# CLASE CATALOGO DE CUENTAS (PUC)
+# ============================================
+class CatalogoCuentas:
     def __init__(self):
         self.cuentas = {
-            "110505": {"codigo": "110505", "nombre": "CAJA", "naturaleza": "DEBITO", "tipo": "ACTIVO"},
-            "110510": {"codigo": "110510", "nombre": "BANCOS", "naturaleza": "DEBITO", "tipo": "ACTIVO"},
-            "1305": {"codigo": "1305", "nombre": "CLIENTES", "naturaleza": "DEBITO", "tipo": "ACTIVO"},
-            "2105": {"codigo": "2105", "nombre": "PROVEEDORES", "naturaleza": "CREDITO", "tipo": "PASIVO"},
-            "2408": {"codigo": "2408", "nombre": "IMPUESTOS POR PAGAR", "naturaleza": "CREDITO", "tipo": "PASIVO"},
-            "4135": {"codigo": "4135", "nombre": "VENTAS", "naturaleza": "CREDITO", "tipo": "INGRESO"},
-            "5105": {"codigo": "5105", "nombre": "GASTOS OPERACIONALES", "naturaleza": "DEBITO", "tipo": "GASTO"},
-            "510510": {"codigo": "510510", "nombre": "GASTOS PERSONAL", "naturaleza": "DEBITO", "tipo": "GASTO"},
-            "510515": {"codigo": "510515", "nombre": "GASTOS SERVICIOS", "naturaleza": "DEBITO", "tipo": "GASTO"},
+            # ACTIVOS (Débito +)
+            "1101": {"codigo": "1101", "nombre": "CAJA GENERAL", "naturaleza": "DEBITO", "clase": "ACTIVO"},
+            "1102": {"codigo": "1102", "nombre": "BANCOS", "naturaleza": "DEBITO", "clase": "ACTIVO"},
+            "1201": {"codigo": "1201", "nombre": "INVENTARIO", "naturaleza": "DEBITO", "clase": "ACTIVO"},
+            "1205": {"codigo": "1205", "nombre": "CUENTAS POR COBRAR", "naturaleza": "DEBITO", "clase": "ACTIVO"},
+            "1301": {"codigo": "1301", "nombre": "EQUIPO DE OFICINA", "naturaleza": "DEBITO", "clase": "ACTIVO"},
+            # PASIVOS (Crédito +)
+            "2101": {"codigo": "2101", "nombre": "PROVEEDORES", "naturaleza": "CREDITO", "clase": "PASIVO"},
+            "2105": {"codigo": "2105", "nombre": "ITBMS POR PAGAR", "naturaleza": "CREDITO", "clase": "PASIVO"},
+            "2201": {"codigo": "2201", "nombre": "PRÉSTAMOS BANCARIOS", "naturaleza": "CREDITO", "clase": "PASIVO"},
+            # PATRIMONIO (Crédito +)
+            "3101": {"codigo": "3101", "nombre": "CAPITAL SOCIAL", "naturaleza": "CREDITO", "clase": "PATRIMONIO"},
+            "3105": {"codigo": "3105", "nombre": "RETIROS PERSONAL", "naturaleza": "DEBITO", "clase": "PATRIMONIO"},
+            "3701": {"codigo": "3701", "nombre": "UTILIDADES RETENIDAS", "naturaleza": "CREDITO", "clase": "PATRIMONIO"},
+            # INGRESOS (Crédito +)
+            "4135": {"codigo": "4135", "nombre": "VENTAS", "naturaleza": "CREDITO", "clase": "INGRESO"},
+            "4105": {"codigo": "4105", "nombre": "DESCUENTOS EN VENTAS", "naturaleza": "DEBITO", "clase": "INGRESO"},
+            # GASTOS (Débito +)
+            "5105": {"codigo": "5105", "nombre": "GASTOS OPERACIONALES", "naturaleza": "DEBITO", "clase": "GASTO"},
+            "6201": {"codigo": "6201", "nombre": "GASTOS SERVICIOS", "naturaleza": "DEBITO", "clase": "GASTO"}
         }
     
     def obtener_cuenta(self, codigo):
         return self.cuentas.get(codigo)
     
-    def listar_cuentas(self):
-        return list(self.cuentas.values())
+    def listar_activos(self):
+        return [c for c in self.cuentas.values() if c["clase"] == "ACTIVO"]
+    
+    def listar_pasivos(self):
+        return [c for c in self.cuentas.values() if c["clase"] == "PASIVO"]
+    
+    def listar_patrimonio(self):
+        return [c for c in self.cuentas.values() if c["clase"] == "PATRIMONIO"]
+    
+    def listar_ingresos(self):
+        return [c for c in self.cuentas.values() if c["clase"] == "INGRESO"]
+    
+    def listar_gastos(self):
+        return [c for c in self.cuentas.values() if c["clase"] == "GASTO"]
 
+# ============================================
+# CLASE LIBRO DIARIO
+# ============================================
 class LibroDiario:
-    def __init__(self, usuario_id):
+    def __init__(self, usuario_id="el_lento"):
         self.usuario_id = usuario_id
         self.asientos = []
         self.cargar_datos()
     
     def cargar_datos(self):
-        """Carga datos del usuario desde archivo local"""
-        archivo = f"datos_{self.usuario_id}.json"
+        archivo = f"asientos_{self.usuario_id}.json"
         if os.path.exists(archivo):
             try:
                 with open(archivo, 'r') as f:
@@ -170,13 +220,11 @@ class LibroDiario:
                 self.asientos = []
     
     def guardar_datos(self):
-        """Guarda datos del usuario"""
-        archivo = f"datos_{self.usuario_id}.json"
+        archivo = f"asientos_{self.usuario_id}.json"
         with open(archivo, 'w') as f:
             json.dump({'asientos': self.asientos}, f)
     
     def registrar(self, descripcion, tercero, movimientos):
-        """Registra un nuevo asiento"""
         asiento = {
             "id": len(self.asientos) + 1,
             "fecha": datetime.now().strftime("%Y-%m-%d"),
@@ -191,46 +239,34 @@ class LibroDiario:
         return asiento
     
     def obtener_ingresos(self, periodo="mes"):
-        """Calcula ingresos totales"""
         hoy = datetime.now()
         if periodo == "mes":
             fecha_inicio = hoy.replace(day=1)
-        elif periodo == "trimestre":
-            mes_inicio = ((hoy.month - 1) // 3) * 3 + 1
-            fecha_inicio = hoy.replace(month=mes_inicio, day=1)
-        elif periodo == "año":
-            fecha_inicio = hoy.replace(month=1, day=1)
         else:
             fecha_inicio = hoy - timedelta(days=30)
         
         total = 0
         for a in self.asientos:
-            fecha_asiento = datetime.strptime(a["fecha"], "%Y-%m-%d")
-            if fecha_asiento >= fecha_inicio:
+            fecha_a = datetime.strptime(a["fecha"], "%Y-%m-%d")
+            if fecha_a >= fecha_inicio:
                 for m in a["movimientos"]:
                     if m["tipo"] == "CREDITO" and "VENTAS" in m.get("cuenta_nombre", ""):
                         total += m["valor"]
         return total
     
     def obtener_gastos(self, periodo="mes"):
-        """Calcula gastos totales"""
         hoy = datetime.now()
         if periodo == "mes":
             fecha_inicio = hoy.replace(day=1)
-        elif periodo == "trimestre":
-            mes_inicio = ((hoy.month - 1) // 3) * 3 + 1
-            fecha_inicio = hoy.replace(month=mes_inicio, day=1)
-        elif periodo == "año":
-            fecha_inicio = hoy.replace(month=1, day=1)
         else:
             fecha_inicio = hoy - timedelta(days=30)
         
         total = 0
         for a in self.asientos:
-            fecha_asiento = datetime.strptime(a["fecha"], "%Y-%m-%d")
-            if fecha_asiento >= fecha_inicio:
+            fecha_a = datetime.strptime(a["fecha"], "%Y-%m-%d")
+            if fecha_a >= fecha_inicio:
                 for m in a["movimientos"]:
-                    if m["tipo"] == "DEBITO" and "GASTOS" in m.get("cuenta_nombre", ""):
+                    if m["tipo"] == "DEBITO" and "GASTO" in m.get("cuenta_nombre", ""):
                         total += m["valor"]
         return total
     
@@ -241,126 +277,79 @@ class LibroDiario:
         return self.asientos[-n:][::-1]
     
     def obtener_estadisticas(self):
-        """Calcula estadísticas para reportes"""
+        meses = []
         ingresos_mensuales = []
         gastos_mensuales = []
-        meses = []
         
         for i in range(6):
             fecha = datetime.now().replace(day=1) - timedelta(days=30*i)
             mes_nombre = fecha.strftime("%B")
-            meses.insert(0, mes_nombre)
+            meses.insert(0, mes_nombre[:3])
             
-            # Calcular para ese mes
-            inicio_mes = fecha.replace(day=1)
-            fin_mes = (inicio_mes + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+            inicio = fecha.replace(day=1)
+            fin = (inicio + timedelta(days=32)).replace(day=1) - timedelta(days=1)
             
-            ing_mes = 0
-            gas_mes = 0
-            
+            ing = 0
+            gas = 0
             for a in self.asientos:
                 fecha_a = datetime.strptime(a["fecha"], "%Y-%m-%d")
-                if inicio_mes <= fecha_a <= fin_mes:
+                if inicio <= fecha_a <= fin:
                     for m in a["movimientos"]:
                         if m["tipo"] == "CREDITO" and "VENTAS" in m.get("cuenta_nombre", ""):
-                            ing_mes += m["valor"]
-                        if m["tipo"] == "DEBITO" and "GASTOS" in m.get("cuenta_nombre", ""):
-                            gas_mes += m["valor"]
-            
-            ingresos_mensuales.insert(0, ing_mes)
-            gastos_mensuales.insert(0, gas_mes)
+                            ing += m["valor"]
+                        if m["tipo"] == "DEBITO" and "GASTO" in m.get("cuenta_nombre", ""):
+                            gas += m["valor"]
+            ingresos_mensuales.insert(0, ing)
+            gastos_mensuales.insert(0, gas)
         
-        return {
-            "meses": meses,
-            "ingresos": ingresos_mensuales,
-            "gastos": gastos_mensuales,
-            "balance": sum(ingresos_mensuales) - sum(gastos_mensuales)
-        }
+        return {"meses": meses, "ingresos": ingresos_mensuales, "gastos": gastos_mensuales}
 
-class AsistenteContable:
-    def __init__(self, openai_client, libro):
+# ============================================
+# ASISTENTE CONTA (IA)
+# ============================================
+class AsistenteConta:
+    def __init__(self, openai_client, libro, catalogo):
         self.client = openai_client
         self.libro = libro
-        self.contexto = []
+        self.catalogo = catalogo
+        self.conta = Conta()
     
-    def hablar(self, mensaje_usuario):
-        """Responde como un contador amigable y conversacional"""
+    def interpretar(self, mensaje):
+        """Interpreta lenguaje callejero y devuelve transacción"""
         if not self.client:
-            return self.respuesta_sin_ia(mensaje_usuario)
+            return self.interpretar_sin_ia(mensaje)
         
-        # Obtener contexto financiero del usuario
-        ingresos = self.libro.obtener_ingresos()
-        gastos = self.libro.obtener_gastos()
-        balance = ingresos - gastos
+        # Diccionario de cuentas para la IA
+        cuentas_str = ", ".join([f"{c['codigo']}:{c['nombre']}" for c in self.catalogo.cuentas.values()])
         
         try:
             response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": f"""Eres "Tu Amigo Contable", un asistente contable cálido y amigable.
+                    {"role": "system", "content": f"""Eres "Conta", un contador con 20 años de experiencia en Latinoamérica.
                     
-                    DATOS DEL USUARIO:
-                    - Ingresos totales: ${ingresos:,.0f}
-                    - Gastos totales: ${gastos:,.0f}
-                    - Balance: ${balance:,.0f}
+                    Traduces lenguaje callejero a contabilidad formal.
                     
-                    INSTRUCCIONES:
-                    - Habla como un contador con 20 años de experiencia pero en lenguaje simple
-                    - Usa emojis para hacer la conversación más amigable
-                    - Sé cálido, cercano y motivador
-                    - Explica conceptos contables con ejemplos de la vida real
-                    - Si el usuario quiere registrar algo, ayúdalo a hacerlo
-                    - Si pregunta por sus finanzas, usa los datos reales
-                    - Máximo 150 palabras por respuesta
-                    """,
-                    },
-                    {"role": "user", "content": mensaje_usuario}
-                ],
-                temperature=0.7,
-                max_tokens=300
-            )
-            respuesta = response.choices[0].message.content
-            self.contexto.append({"user": mensaje_usuario, "bot": respuesta})
-            return respuesta
-        except Exception as e:
-            return f"⚠️ Error: {e}\n\n{self.respuesta_sin_ia(mensaje_usuario)}"
-    
-    def respuesta_sin_ia(self, mensaje):
-        """Respuesta básica sin IA"""
-        if "registrar" in mensaje.lower() or "venta" in mensaje.lower():
-            return "📝 ¡Claro! Para registrar una venta, necesito saber: ¿qué vendiste?, ¿a quién?, ¿por cuánto?, ¿en efectivo o crédito?"
-        elif "balance" in mensaje.lower() or "ganancia" in mensaje.lower():
-            ingresos = self.libro.obtener_ingresos()
-            gastos = self.libro.obtener_gastos()
-            return f"💰 Según tus registros, tus ingresos son ${ingresos:,.0f}, tus gastos ${gastos:,.0f} y tu balance es ${ingresos - gastos:,.0f}. ¿Quieres registrar más movimientos?"
-        else:
-            return "🤗 ¡Hola! Soy tu asistente contable. Puedo ayudarte a registrar ventas, gastos, y mostrarte tus reportes financieros. ¿Qué necesitas hoy?"
-    
-    def interpretar_transaccion(self, texto):
-        """Interpreta una descripción de transacción para registrarla"""
-        if not self.client:
-            return None
-        
-        try:
-            response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": """Eres un asistente contable experto. Interpreta transacciones y devuelve SOLO JSON.
-
-Reglas:
-- Venta: DEBITO a CAJA (110505) o CLIENTES (1305), CREDITO a VENTAS (4135)
-- Si es venta, calcular IVA 19% como CREDITO a IMPUESTOS POR PAGAR (2408)
-- Gasto: DEBITO a GASTOS OPERACIONALES (5105), CREDITO a CAJA (110505)
-
-Devuelve JSON:
-{
-    "descripcion": "descripción",
-    "tercero": "cliente/proveedor",
-    "movimientos": [
-        {"cuenta": "110505", "tipo": "DEBITO", "valor": 100000, "detalle": "detalle"}
-    ]
-}"""},
-                    {"role": "user", "content": texto}
+                    Diccionario de traducción:
+                    - "me fiaron" → PROVEEDORES (2101) CREDITO
+                    - "me debe" → CUENTAS POR COBRAR (1205) DEBITO  
+                    - "agarré de la caja" → RETIROS PERSONAL (3105) DEBITO
+                    - "soltó los que debía" → CAJA (1101) DEBITO
+                    - "vendí" → VENTAS (4135) CREDITO
+                    - "compré" → INVENTARIO (1405) DEBITO
+                    
+                    Cuentas disponibles: {cuentas_str}
+                    
+                    Devuelve SOLO JSON con:
+                    {{
+                        "descripcion": "descripción clara",
+                        "tercero": "nombre del cliente/proveedor",
+                        "movimientos": [
+                            {{"cuenta": "codigo", "tipo": "DEBITO/CREDITO", "valor": número, "detalle": "detalle"}}
+                        ]
+                    }}
+                    """},
+                    {"role": "user", "content": mensaje}
                 ],
                 temperature=0.3,
                 max_tokens=500
@@ -371,28 +360,81 @@ Devuelve JSON:
             json_match = re.search(r'\{.*\}', text, re.DOTALL)
             if json_match:
                 return json.loads(json_match.group())
-        except:
-            pass
+        except Exception as e:
+            st.error(f"Error IA: {e}")
+        
+        return self.interpretar_sin_ia(mensaje)
+    
+    def interpretar_sin_ia(self, mensaje):
+        """Interpretación básica sin IA usando el diccionario"""
+        mensaje_lower = mensaje.lower()
+        
+        for palabra, info in DICCIONARIO.items():
+            if palabra in mensaje_lower:
+                # Buscar números
+                import re
+                numeros = re.findall(r'\d+', mensaje)
+                valor = int(numeros[0]) if numeros else 0
+                
+                return {
+                    "descripcion": mensaje,
+                    "tercero": "cliente" if "vendí" in mensaje else "proveedor",
+                    "movimientos": [
+                        {"cuenta": info["cuenta"], "tipo": info["tipo"], "valor": valor, "detalle": mensaje}
+                    ]
+                }
         return None
+    
+    def hablar(self, mensaje):
+        """Conta responde como el contador de barrio"""
+        if not self.client:
+            return f"🧔 **Conta:** {self.conta.hablar('Cuéntame más, ¿cuánto fue y a quién?')}"
+        
+        ingresos = self.libro.obtener_ingresos()
+        gastos = self.libro.obtener_gastos()
+        balance = ingresos - gastos
+        
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": f"""Eres "Conta", un contador con 20 años de experiencia en Latinoamérica.
+                    
+                    Personalidad:
+                    - Hablas como un contador de barrio, con confianza y sabiduría
+                    - Usas términos como "el lento" (cliente), "mandados" (transacciones)
+                    - Das consejos prácticos y honestos
+                    
+                    Datos del negocio:
+                    - Ingresos: ${ingresos:,.0f}
+                    - Gastos: ${gastos:,.0f}
+                    - Balance: ${balance:,.0f}
+                    
+                    Responde de forma cálida y práctica."""},
+                    {"role": "user", "content": mensaje}
+                ],
+                temperature=0.7,
+                max_tokens=250
+            )
+            return f"🧔 **Conta:** {response.choices[0].message.content}"
+        except:
+            return f"🧔 **Conta:** {self.conta.hablar('Anótalo bien, que después no digas que no te avisé.')}"
 
 # ============================================
-# FUNCIONES DE REPORTES
+# FUNCIONES DEL DASHBOARD
 # ============================================
-def mostrar_reportes(libro):
-    """Genera reportes profesionales en el dashboard"""
-    stats = libro.obtener_estadisticas()
+def mostrar_dashboard(libro, catalogo):
     ingresos = libro.obtener_ingresos()
     gastos = libro.obtener_gastos()
     balance = ingresos - gastos
     
-    # Tarjetas principales
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown(f"""
         <div class='card'>
             <h3>💰 INGRESOS</h3>
             <div class='valor'>${ingresos:,.0f}</div>
-            <div style='color: {COLORES["verde"]};'>↑ vs mes anterior</div>
+            <div style='color: {COLORES["verde"]};'>Lo que ha entrado</div>
         </div>
         """, unsafe_allow_html=True)
     with col2:
@@ -400,40 +442,34 @@ def mostrar_reportes(libro):
         <div class='card'>
             <h3>💸 GASTOS</h3>
             <div class='valor'>${gastos:,.0f}</div>
-            <div style='color: {COLORES["rojo"]};'>↓ vs mes anterior</div>
+            <div style='color: {COLORES["rojo"]};'>Lo que ha salido</div>
         </div>
         """, unsafe_allow_html=True)
     with col3:
-        color_balance = COLORES["verde"] if balance >= 0 else COLORES["rojo"]
+        color = COLORES["verde"] if balance >= 0 else COLORES["rojo"]
         st.markdown(f"""
         <div class='card'>
             <h3>⚖️ BALANCE</h3>
             <div class='valor'>${balance:,.0f}</div>
-            <div style='color: {color_balance};'>{'Positivo' if balance >= 0 else 'Negativo'}</div>
+            <div style='color: {color};'>{'Ganancia' if balance >= 0 else 'Pérdida'}</div>
         </div>
         """, unsafe_allow_html=True)
     
-    # Gráfico de evolución
-    st.markdown("<div class='section-title'>📈 Evolución Financiera</div>", unsafe_allow_html=True)
-    
+    # Gráfico
+    stats = libro.obtener_estadisticas()
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=stats["meses"], y=stats["ingresos"], 
-                             name="Ingresos", line=dict(color=COLORES["verde"], width=3)))
-    fig.add_trace(go.Scatter(x=stats["meses"], y=stats["gastos"], 
-                             name="Gastos", line=dict(color=COLORES["rojo"], width=3)))
+    fig.add_trace(go.Bar(x=stats["meses"], y=stats["ingresos"], name="Ingresos", marker_color=COLORES["verde"]))
+    fig.add_trace(go.Bar(x=stats["meses"], y=stats["gastos"], name="Gastos", marker_color=COLORES["rojo"]))
     fig.update_layout(
+        title="Evolución de Ingresos vs Gastos",
         plot_bgcolor='white',
         paper_bgcolor='white',
-        title="Ingresos vs Gastos por Mes",
-        xaxis_title="Mes",
-        yaxis_title="Monto (COP)",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        barmode='group'
     )
     st.plotly_chart(fig, use_container_width=True)
     
-    # Tabla de movimientos recientes
+    # Tabla de movimientos
     st.markdown("<div class='section-title'>📋 Últimos Movimientos</div>", unsafe_allow_html=True)
-    
     movimientos = libro.obtener_movimientos_recientes(10)
     if movimientos:
         data = []
@@ -442,50 +478,60 @@ def mostrar_reportes(libro):
                 data.append({
                     "Fecha": m["fecha"],
                     "Descripción": m["descripcion"],
-                    "Cliente/Proveedor": m["tercero"],
+                    "Tercero": m["tercero"],
                     "Cuenta": mov.get("cuenta_nombre", mov.get("cuenta", "")),
                     "Débito": f"${mov['valor']:,.0f}" if mov["tipo"] == "DEBITO" else "-",
                     "Crédito": f"${mov['valor']:,.0f}" if mov["tipo"] == "CREDITO" else "-"
                 })
-        df = pd.DataFrame(data)
+        st.dataframe(pd.DataFrame(data), use_container_width=True, hide_index=True)
+    else:
+        st.info("📝 Aún no hay movimientos. Dile a Conta: 'Vendí algo' o 'Compré mercancía'")
+
+def mostrar_catalogo(catalogo):
+    st.markdown("<div class='section-title'>📚 Catálogo de Cuentas (PUC)</div>", unsafe_allow_html=True)
+    
+    tabs = st.tabs(["🏦 ACTIVOS", "💳 PASIVOS", "👥 PATRIMONIO", "💰 INGRESOS", "📉 GASTOS"])
+    
+    with tabs[0]:
+        df = pd.DataFrame(catalogo.listar_activos())
         st.dataframe(df, use_container_width=True, hide_index=True)
-    else:
-        st.info("Aún no hay movimientos registrados. ¡Comienza registrando tu primera venta o gasto!")
-    
-    # Consejos financieros
-    st.markdown("<div class='section-title'>💡 Consejos para tu Negocio</div>", unsafe_allow_html=True)
-    
-    if balance > 0:
-        st.success(f"✅ ¡Excelente! Tienes un balance positivo de ${balance:,.0f}. Considera ahorrar al menos el 20% para impuestos y emergencias.")
-    elif balance == 0:
-        st.warning("⚠️ Estás en punto de equilibrio. Revisa tus gastos fijos y busca aumentar tus ventas.")
-    else:
-        st.error(f"⚠️ Tus gastos superan a tus ingresos por ${abs(balance):,.0f}. Revisa tus gastos variables y considera reducir costos.")
-    
-    if ingresos == 0:
-        st.info("📝 No has registrado ingresos aún. Recuerda registrar todas tus ventas para tener un control real de tu negocio.")
+    with tabs[1]:
+        df = pd.DataFrame(catalogo.listar_pasivos())
+        st.dataframe(df, use_container_width=True, hide_index=True)
+    with tabs[2]:
+        df = pd.DataFrame(catalogo.listar_patrimonio())
+        st.dataframe(df, use_container_width=True, hide_index=True)
+    with tabs[3]:
+        df = pd.DataFrame(catalogo.listar_ingresos())
+        st.dataframe(df, use_container_width=True, hide_index=True)
+    with tabs[4]:
+        df = pd.DataFrame(catalogo.listar_gastos())
+        st.dataframe(df, use_container_width=True, hide_index=True)
 
 # ============================================
 # INICIALIZACIÓN
 # ============================================
-def inicializar_sistema():
+def inicializar():
     if "usuario_id" not in st.session_state:
-        st.session_state.usuario_id = "demo_user"
+        st.session_state.usuario_id = "el_lento"
+    if "catalogo" not in st.session_state:
+        st.session_state.catalogo = CatalogoCuentas()
     if "libro" not in st.session_state:
         st.session_state.libro = LibroDiario(st.session_state.usuario_id)
     if "openai_client" not in st.session_state:
         st.session_state.openai_client = configurar_openai()
     if "asistente" not in st.session_state:
-        st.session_state.asistente = AsistenteContable(
-            st.session_state.openai_client, 
-            st.session_state.libro
+        st.session_state.asistente = AsistenteConta(
+            st.session_state.openai_client,
+            st.session_state.libro,
+            st.session_state.catalogo
         )
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
     if "logged_in" not in st.session_state:
         st.session_state.logged_in = False
 
-inicializar_sistema()
+inicializar()
 
 # ============================================
 # LOGIN
@@ -493,14 +539,15 @@ inicializar_sistema()
 if not st.session_state.logged_in:
     st.markdown("""
     <div style='text-align: center; padding: 3rem;'>
-        <h1 style='color: #345470;'>💰 Tu Amigo Contable</h1>
-        <p style='font-size: 1.2rem; color: #666;'>Tu asistente contable inteligente</p>
+        <h1 style='color: #345470;'>🧔 Conta</h1>
+        <p style='font-size: 1.2rem; color: #666;'>"Traduciendo el lenguaje del barrio a balances millonarios."</p>
+        <p style='font-size: 1rem; color: #888;'>20 años cuadrando cajas en Latam</p>
     </div>
     """, unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
-        if st.button("🔴 Entrar como Invitado", use_container_width=True):
+        if st.button("🔴 Empezar a cuadrar", use_container_width=True):
             st.session_state.logged_in = True
             st.rerun()
     st.stop()
@@ -512,280 +559,186 @@ st.markdown("""
 <div class='main-header'>
     <div class='small-logo'>igocontable.com</div>
     <div class='big-logo'>tuamigocontable.com</div>
-    <div class='tagline'>Tu asistente contable inteligente</div>
+    <div class='tagline'>"Traduciendo el lenguaje del barrio a balances millonarios."</div>
 </div>
 """, unsafe_allow_html=True)
 
 # Sidebar
 with st.sidebar:
-    st.markdown("### 📊 Menú")
+    st.markdown("### 🧔 Conta")
+    st.markdown("*20 años cuadrando cajas en Latam*")
+    st.markdown("---")
+    
     menu = st.radio(
-        "Navegación",
-        ["🏠 Dashboard", "📸 Escanear Factura", "💬 Conversar con IA", "✍️ Registrar Manual", "📚 Aprende"],
+        "📊 Navegación",
+        ["🏠 Dashboard", "📚 Catálogo de Cuentas", "💬 Hablar con Conta", "✍️ Registrar Manual", "📖 Diccionario"],
         label_visibility="collapsed"
     )
     st.markdown("---")
     
-    # Estado de IA
     if st.session_state.openai_client:
-        st.success("✅ IA conectada")
+        st.success("✅ Conta conectado")
     else:
-        st.warning("⚠️ IA no disponible")
+        st.warning("⚠️ Conta en modo básico")
     
-    # Datos del usuario
-    st.markdown(f"**👤 Usuario:** Demo")
-    st.markdown(f"**📅 Última actividad:** {datetime.now().strftime('%d/%m/%Y')}")
+    st.markdown(f"**👤 El lento:** {st.session_state.usuario_id}")
     
-    if st.button("🚪 Cerrar Sesión", use_container_width=True):
+    if st.button("🚪 Salir", use_container_width=True):
         st.session_state.logged_in = False
         st.rerun()
 
 # ============================================
-# PÁGINA 1: DASHBOARD
+# DASHBOARD
 # ============================================
 if menu == "🏠 Dashboard":
-    mostrar_reportes(st.session_state.libro)
+    mostrar_dashboard(st.session_state.libro, st.session_state.catalogo)
 
 # ============================================
-# PÁGINA 2: ESCANEAR FACTURA (OCR SIMULADO)
+# CATÁLOGO DE CUENTAS
 # ============================================
-elif menu == "📸 Escanear Factura":
-    st.markdown("<div class='section-title'>📸 Escanear Factura</div>", unsafe_allow_html=True)
+elif menu == "📚 Catálogo de Cuentas":
+    mostrar_catalogo(st.session_state.catalogo)
+
+# ============================================
+# HABLAR CON CONTA
+# ============================================
+elif menu == "💬 Hablar con Conta":
+    st.markdown("<div class='section-title'>💬 Habla con Conta</div>", unsafe_allow_html=True)
     
     st.markdown("""
-    <div class='ia-card'>
-        🤖 <strong>Escáner Inteligente de Facturas</strong><br>
-        Sube una foto o factura y la IA leerá los datos automáticamente.
-        <br><br>
-        <small>📌 Por ahora puedes probar con descripciones de facturas:</small>
+    <div class='conta-card'>
+        🧔 <strong>Conta (20 años de experiencia):</strong><br>
+        "Cuéntame cómo va la movida. Si te fiaron, si te deben, si agarraste de la caja... 
+        Yo traduzco eso a números que no duelen."
     </div>
     """, unsafe_allow_html=True)
     
-    # Simulación de OCR (por ahora texto manual)
-    texto_factura = st.text_area(
-        "📄 Copia el texto de tu factura aquí:",
-        placeholder="Ejemplo:\nFACTURA No. 001\nCliente: Juan Pérez\nFecha: 20/03/2026\nTotal: $150,000\nIVA 19%\nProducto: Camisa",
-        height=150
-    )
-    
-    if st.button("🔍 Analizar Factura con IA", use_container_width=True):
-        if texto_factura:
-            with st.spinner("🤖 La IA está analizando la factura..."):
-                prompt = f"""
-                Analiza esta factura y extrae la información clave. Devuelve SOLO JSON:
-                
-                Texto: {texto_factura}
-                
-                Formato esperado:
-                {{
-                    "tipo": "venta" o "gasto",
-                    "tercero": "nombre del cliente/proveedor",
-                    "fecha": "YYYY-MM-DD",
-                    "total": número,
-                    "iva": número,
-                    "productos": ["producto1", "producto2"]
-                }}
-                """
-                
-                if st.session_state.openai_client:
-                    try:
-                        response = st.session_state.openai_client.chat.completions.create(
-                            model="gpt-3.5-turbo",
-                            messages=[{"role": "user", "content": prompt}],
-                            temperature=0.2,
-                            max_tokens=300
-                        )
-                        import re
-                        text = response.choices[0].message.content
-                        json_match = re.search(r'\{.*\}', text, re.DOTALL)
-                        if json_match:
-                            datos = json.loads(json_match.group())
-                            st.success("✅ Datos extraídos correctamente:")
-                            st.json(datos)
-                            
-                            if st.button("📝 Registrar esta Factura"):
-                                if datos["tipo"] == "venta":
-                                    iva = datos.get("iva", datos["total"] * 0.19)
-                                    movimientos = [
-                                        {"cuenta": "110505", "tipo": "DEBITO", "valor": datos["total"], "cuenta_nombre": "CAJA", "detalle": datos.get("productos", ["Venta"])[0]},
-                                        {"cuenta": "4135", "tipo": "CREDITO", "valor": datos["total"] - iva, "cuenta_nombre": "VENTAS", "detalle": "Venta"},
-                                    ]
-                                    if iva > 0:
-                                        movimientos.append({"cuenta": "2408", "tipo": "CREDITO", "valor": iva, "cuenta_nombre": "IMPUESTOS POR PAGAR", "detalle": "IVA"})
-                                else:
-                                    movimientos = [
-                                        {"cuenta": "5105", "tipo": "DEBITO", "valor": datos["total"], "cuenta_nombre": "GASTOS OPERACIONALES", "detalle": datos.get("productos", ["Gasto"])[0]},
-                                        {"cuenta": "110505", "tipo": "CREDITO", "valor": datos["total"], "cuenta_nombre": "CAJA", "detalle": "Pago"},
-                                    ]
-                                
-                                resultado = st.session_state.libro.registrar(
-                                    descripcion=f"Factura {datos.get('productos', ['compra'])[0]}",
-                                    tercero=datos.get("tercero", ""),
-                                    movimientos=movimientos
-                                )
-                                st.success("✅ ¡Factura registrada exitosamente!")
-                                st.rerun()
-                    except Exception as e:
-                        st.error(f"Error al analizar: {e}")
-                else:
-                    st.warning("IA no disponible. Configura tu API key.")
-        else:
-            st.warning("Pega el texto de una factura para analizar")
-
-# ============================================
-# PÁGINA 3: CONVERSAR CON IA
-# ============================================
-elif menu == "💬 Conversar con IA":
-    st.markdown("<div class='section-title'>💬 Conversa con Tu Amigo Contable</div>", unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div class='ia-card'>
-        🧠 <strong>Habla conmigo como si fuera tu contador personal</strong><br>
-        Puedes preguntarme sobre tus finanzas, pedirme que registre movimientos, o consultar conceptos contables.
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Mostrar historial de conversación
     for msg in st.session_state.chat_history:
         if msg["role"] == "user":
-            st.markdown(f"<div class='chat-message-user'><strong>Tú:</strong> {msg['content']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='chat-message-user'><strong>El lento:</strong> {msg['content']}</div>", unsafe_allow_html=True)
         else:
-            st.markdown(f"<div class='chat-message-bot'><strong>🤖 Tu Amigo Contable:</strong><br>{msg['content']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='chat-message-conta'>{msg['content']}</div>", unsafe_allow_html=True)
     
-    # Input del usuario
-    mensaje = st.text_input("Escribe tu mensaje:", placeholder="Ej: ¿Cómo voy con mis finanzas? o Registra una venta de $100,000 a Juan")
+    mensaje = st.text_input("Dile algo a Conta:", placeholder="Ej: 'Me fiaron 4 leches' o 'Vendí un pan en $10,000'")
     
-    col_enviar, col_limpiar = st.columns([4, 1])
-    with col_enviar:
-        if st.button("📤 Enviar", use_container_width=True):
+    col1, col2 = st.columns([4, 1])
+    with col1:
+        if st.button("Enviar", use_container_width=True):
             if mensaje:
                 st.session_state.chat_history.append({"role": "user", "content": mensaje})
                 
-                with st.spinner("🤖 Pensando..."):
-                    # Verificar si es una transacción para registrar
-                    if any(palabra in mensaje.lower() for palabra in ["registrar", "venta", "gasto", "compré", "vendí", "pagué"]):
-                        transaccion = st.session_state.asistente.interpretar_transaccion(mensaje)
-                        if transaccion and transaccion.get("movimientos"):
-                            resultado = st.session_state.libro.registrar(
-                                descripcion=transaccion.get("descripcion", mensaje),
-                                tercero=transaccion.get("tercero", ""),
-                                movimientos=transaccion["movimientos"]
-                            )
-                            if resultado:
-                                respuesta = f"✅ ¡Listo! He registrado {transaccion.get('descripcion', 'tu transacción')} por ${sum(m['valor'] for m in transaccion['movimientos'] if m['tipo'] == 'DEBITO'):,.0f}. ¿Quieres registrar algo más?"
-                            else:
-                                respuesta = "⚠️ Tuve un problema al registrar. ¿Podrías darme más detalles?"
+                with st.spinner("Conta está revisando sus libros..."):
+                    # Verificar si es una transacción
+                    transaccion = st.session_state.asistente.interpretar(mensaje)
+                    if transaccion and transaccion.get("movimientos"):
+                        resultado = st.session_state.libro.registrar(
+                            descripcion=transaccion.get("descripcion", mensaje),
+                            tercero=transaccion.get("tercero", ""),
+                            movimientos=transaccion["movimientos"]
+                        )
+                        if resultado:
+                            respuesta = f"🧔 **Conta:** 'Listo, ya quedó anotado. {mensaje} por ${sum(m['valor'] for m in transaccion['movimientos']):,.0f}. Sigue así, que el negocio va tomando forma.'"
                         else:
-                            respuesta = st.session_state.asistente.hablar(mensaje)
+                            respuesta = f"🧔 **Conta:** 'Algo no cuadra. ¿Me explicas mejor cuánto fue y a quién?'"
                     else:
                         respuesta = st.session_state.asistente.hablar(mensaje)
-                
-                st.session_state.chat_history.append({"role": "bot", "content": respuesta})
-                st.rerun()
+                    
+                    st.session_state.chat_history.append({"role": "assistant", "content": respuesta})
+                    st.rerun()
     
-    with col_limpiar:
-        if st.button("🗑️ Limpiar", use_container_width=True):
+    with col2:
+        if st.button("Limpiar", use_container_width=True):
             st.session_state.chat_history = []
             st.rerun()
     
-    # Sugerencias rápidas
-    st.markdown("### 📌 Preguntas sugeridas")
-    col_s1, col_s2, col_s3, col_s4 = st.columns(4)
-    sugerencias = ["¿Cómo voy con mis finanzas?", "Registra una venta de $50,000", "¿Qué es el IVA?", "¿Cómo puedo ahorrar más?"]
-    
+    # Sugerencias
+    st.markdown("### 📌 Pregúntale a Conta:")
+    cols = st.columns(4)
+    sugerencias = ["Me fiaron 4 leches", "Me debe un pan", "Agarré $10 de la caja", "Soltó los $20 que debía"]
     for i, sug in enumerate(sugerencias):
-        with [col_s1, col_s2, col_s3, col_s4][i]:
+        with cols[i]:
             if st.button(sug, use_container_width=True):
                 st.session_state.chat_history.append({"role": "user", "content": sug})
-                
-                with st.spinner("🤖 Pensando..."):
-                    if "registra" in sug.lower():
-                        transaccion = st.session_state.asistente.interpretar_transaccion(sug)
-                        if transaccion and transaccion.get("movimientos"):
-                            resultado = st.session_state.libro.registrar(
-                                descripcion=transaccion.get("descripcion", sug),
-                                tercero=transaccion.get("tercero", ""),
-                                movimientos=transaccion["movimientos"]
-                            )
-                            respuesta = f"✅ ¡Registrado! Tu balance actual es ${st.session_state.libro.obtener_balance():,.0f}"
-                        else:
-                            respuesta = st.session_state.asistente.hablar(sug)
-                    else:
-                        respuesta = st.session_state.asistente.hablar(sug)
-                
-                st.session_state.chat_history.append({"role": "bot", "content": respuesta})
+                transaccion = st.session_state.asistente.interpretar(sug)
+                if transaccion and transaccion.get("movimientos"):
+                    resultado = st.session_state.libro.registrar(
+                        descripcion=transaccion.get("descripcion", sug),
+                        tercero=transaccion.get("tercero", ""),
+                        movimientos=transaccion["movimientos"]
+                    )
+                respuesta = st.session_state.asistente.hablar(sug)
+                st.session_state.chat_history.append({"role": "assistant", "content": respuesta})
                 st.rerun()
 
 # ============================================
-# PÁGINA 4: REGISTRAR MANUAL
+# REGISTRAR MANUAL
 # ============================================
 elif menu == "✍️ Registrar Manual":
-    st.markdown("<div class='section-title'>✍️ Registrar Movimiento Manual</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>✍️ Registrar Manual</div>", unsafe_allow_html=True)
     
     with st.form("registro_manual"):
         col1, col2 = st.columns(2)
         with col1:
             descripcion = st.text_input("Descripción", placeholder="Ej: Venta de producto")
-            tercero = st.text_input("Cliente/Proveedor", placeholder="Nombre")
+            tercero = st.text_input("Cliente/Proveedor")
             fecha = st.date_input("Fecha", datetime.now())
         with col2:
             tipo = st.selectbox("Tipo", ["Ingreso (Venta)", "Gasto"])
-            monto = st.number_input("Monto", min_value=0.0, step=10000.0, format="%0.0f")
-            metodo = st.selectbox("Método de pago", ["Efectivo", "Banco", "Crédito"])
+            cuenta = st.selectbox("Cuenta", [
+                "1101 - CAJA GENERAL",
+                "1102 - BANCOS",
+                "1205 - CUENTAS POR COBRAR",
+                "2101 - PROVEEDORES",
+                "4135 - VENTAS",
+                "5105 - GASTOS OPERACIONALES"
+            ])
+            monto = st.number_input("Monto", min_value=0.0, step=10000.0)
         
-        submit = st.form_submit_button("Registrar Movimiento", use_container_width=True)
+        submit = st.form_submit_button("Registrar", use_container_width=True)
         
         if submit and monto > 0:
+            codigo = cuenta.split(" - ")[0]
             if tipo == "Ingreso (Venta)":
-                iva = monto * 0.19
                 movimientos = [
-                    {"cuenta": "110505" if metodo == "Efectivo" else "110510", "tipo": "DEBITO", "valor": monto + iva, "cuenta_nombre": "CAJA" if metodo == "Efectivo" else "BANCOS", "detalle": descripcion},
-                    {"cuenta": "4135", "tipo": "CREDITO", "valor": monto, "cuenta_nombre": "VENTAS", "detalle": "Venta"},
+                    {"cuenta": codigo, "tipo": "DEBITO", "valor": monto, "cuenta_nombre": cuenta.split(" - ")[1]},
+                    {"cuenta": "4135", "tipo": "CREDITO", "valor": monto, "cuenta_nombre": "VENTAS"}
                 ]
-                if iva > 0:
-                    movimientos.append({"cuenta": "2408", "tipo": "CREDITO", "valor": iva, "cuenta_nombre": "IMPUESTOS POR PAGAR", "detalle": "IVA"})
             else:
                 movimientos = [
-                    {"cuenta": "5105", "tipo": "DEBITO", "valor": monto, "cuenta_nombre": "GASTOS OPERACIONALES", "detalle": descripcion},
-                    {"cuenta": "110505" if metodo == "Efectivo" else "110510", "tipo": "CREDITO", "valor": monto, "cuenta_nombre": "CAJA" if metodo == "Efectivo" else "BANCOS", "detalle": "Pago"},
+                    {"cuenta": "5105", "tipo": "DEBITO", "valor": monto, "cuenta_nombre": "GASTOS OPERACIONALES"},
+                    {"cuenta": codigo, "tipo": "CREDITO", "valor": monto, "cuenta_nombre": cuenta.split(" - ")[1]}
                 ]
             
             resultado = st.session_state.libro.registrar(descripcion, tercero, movimientos)
             if resultado:
-                st.success("✅ Movimiento registrado correctamente")
-            else:
-                st.error("Error al registrar")
+                st.success("✅ Movimiento registrado")
 
 # ============================================
-# PÁGINA 5: APRENDE
+# DICCIONARIO
 # ============================================
-elif menu == "📚 Aprende":
-    st.markdown("<div class='section-title'>📚 Aprende Contabilidad Fácil</div>", unsafe_allow_html=True)
+elif menu == "📖 Diccionario":
+    st.markdown("<div class='section-title'>📖 Diccionario Callejero → Contabilidad</div>", unsafe_allow_html=True)
     
-    conceptos = {
-        "📊 ¿Qué es contabilidad?": "La contabilidad es como un diario de tu negocio. Anotas todo lo que entra (ingresos) y todo lo que sale (gastos) para saber si estás ganando o perdiendo dinero.",
-        "⚖️ ¿Qué es un balance?": "El balance es una foto de tu negocio en un momento específico. Te muestra lo que tienes (activos), lo que debes (pasivos) y lo que realmente es tuyo (patrimonio).",
-        "💰 ¿Qué es el IVA?": "El IVA es un impuesto que cobras por tus ventas y luego pagas al gobierno. En Colombia es del 19%. Es dinero que pasa por tu negocio, no es ganancia tuya.",
-        "📈 ¿Qué es una utilidad?": "La utilidad es lo que te sobra después de restar todos tus gastos de tus ingresos. Si vendes $100 y gastaste $70, tu utilidad es $30.",
-        "💳 ¿Qué es partida doble?": "Es la regla de oro: por cada dinero que entra, otro sale. Si vendes algo, ganas dinero pero entregas un producto. Siempre se equilibra."
-    }
-    
-    col1, col2 = st.columns(2)
-    for i, (titulo, contenido) in enumerate(conceptos.items()):
-        with col1 if i % 2 == 0 else col2:
-            with st.expander(titulo):
-                st.write(contenido)
+    df_diccionario = pd.DataFrame([
+        {"Lenguaje de Barrio": "Me fiaron 4 leches", "Conta entiende": "PROVEEDORES (2101)", "Acción": "Aumenta Pasivo (CR)"},
+        {"Lenguaje de Barrio": "Me debe un pan", "Conta entiende": "CUENTAS POR COBRAR (1205)", "Acción": "Aumenta Activo (DB)"},
+        {"Lenguaje de Barrio": "Agarré $10 de la caja", "Conta entiende": "RETIROS PERSONAL (3105)", "Acción": "Aumenta Retiro (DB)"},
+        {"Lenguaje de Barrio": "Soltó los $20 que debía", "Conta entiende": "CAJA (1101) / CxC (1205)", "Acción": "Entra Cash, Baja Deuda"},
+        {"Lenguaje de Barrio": "Le pagué al de la luz", "Conta entiende": "GASTO SERVICIOS (6201)", "Acción": "Aumenta Gasto (DB)"},
+        {"Lenguaje de Barrio": "Me bajaron $5 por feo", "Conta entiende": "DESCUENTO VENTAS (4105)", "Acción": "Resta al Ingreso (DB)"}
+    ])
+    st.dataframe(df_diccionario, use_container_width=True, hide_index=True)
     
     st.markdown("---")
-    st.markdown("### 🎓 ¿Quieres aprender más?")
-    st.info("💬 Ve a la sección 'Conversar con IA' y pregúntame cualquier concepto contable. ¡Te explico todo en términos simples!")
+    st.markdown("### 📌 Regla de Oro")
+    st.info("**'No importa si fue un peso o un millón, si se mueve, se anota.'**")
 
 # ============================================
-# BOTÓN FLOTANTE IA
+# BOTÓN FLOTANTE
 # ============================================
 st.markdown(f"""
 <div style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
-    <button onclick="window.location.href='#conversar-con-ia'" 
+    <button onclick="window.location.href='#hablar-con-conta'" 
         style="width: 60px; height: 60px; border-radius: 50%; 
                background: linear-gradient(135deg, {COLORES['verde']} 0%, #6aa84f 100%);
                color: white; border: none; font-size: 30px; cursor: pointer;
