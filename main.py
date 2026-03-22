@@ -376,4 +376,4 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-web: streamlit run app.py --server.port $PORT --server.address 0.0.0.0
+web: streamlit run app.py --server.port $PORT --server.address 0.0.0.0 
