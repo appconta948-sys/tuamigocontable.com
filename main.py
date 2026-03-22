@@ -674,3 +674,4 @@ col2.metric("Egresos", f"${egresos:,.0f}")
 col3.metric("Balance", f"${balance:,.0f}")
 
 st.success("✅ App funcionando correctamente")
+
